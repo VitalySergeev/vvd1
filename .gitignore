@@ -1,6 +1,7 @@
 venv/
 Lib/
 Scripts/
+exportToHTML/
 __pycache__/
 *.pyc
 .idea/
