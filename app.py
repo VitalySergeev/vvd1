@@ -15,7 +15,7 @@ import socket
 
 # Создаем приложение
 git commit -m "Очистка репозитория от служебных файлов"app = Flask(__name__)
-app.config['SECRET_KEY'] = 'твой-супер-секретный-ключ-придумай-свой'  # Обязательно измени!
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'сложно-будет-подобрать-временный-ключ'
 
 # Создаем путь к папке database в той же директории, где находится app.py
 BASE_DIR = Path(__file__).parent
