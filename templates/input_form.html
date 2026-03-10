@@ -2,10 +2,19 @@
 {% block title %}Ввод данных{% endblock %}
 
 {% block extra_head %}
-<!-- Подключаем Flatpickr для красивых календарей -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+<style>
+/* Дополнительные стили для красоты */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.card-header {
+    font-weight: bold;
+}
+.form-label {
+    font-weight: 500;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -41,7 +50,8 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="birth_date" class="form-label">Дата рождения</label>
-                                <input type="text" class="form-control datepicker" id="birth_date" name="birth_date" placeholder="Выберите дату">
+                                <!-- ИСПРАВЛЕНО: теперь type="date" вместо text + datepicker -->
+                                <input type="date" class="form-control" id="birth_date" name="birth_date">
                             </div>
                         </div>
                     </div>
@@ -56,7 +66,8 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="date2" class="form-label">Дата 2</label>
-                                <input type="text" class="form-control datepicker" id="date2" name="date2" placeholder="Выберите дату">
+                                <!-- ИСПРАВЛЕНО: type="date" -->
+                                <input type="date" class="form-control" id="date2" name="date2">
                             </div>
                             <div class="col-md-8 mb-3">
                                 <label for="place2" class="form-label">Место 2</label>
@@ -170,15 +181,18 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="date4" class="form-label">Дата 4</label>
-                                <input type="text" class="form-control datepicker" id="date4" name="date4" placeholder="Выберите дату">
+                                <!-- ИСПРАВЛЕНО: type="date" -->
+                                <input type="date" class="form-control" id="date4" name="date4">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ee" class="form-label">ЭЭ</label>
-                                <input type="text" class="form-control datepicker" id="ee" name="ee" placeholder="Выберите дату">
+                                <!-- ИСПРАВЛЕНО: type="date" -->
+                                <input type="date" class="form-control" id="ee" name="ee">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ee4" class="form-label">ЭЭ4</label>
-                                <input type="text" class="form-control datepicker" id="ee4" name="ee4" placeholder="Выберите дату">
+                                <!-- ИСПРАВЛЕНО: type="date" -->
+                                <input type="date" class="form-control" id="ee4" name="ee4">
                             </div>
                         </div>
                     </div>
@@ -194,62 +208,38 @@
     </div>
 </div>
 
+<!-- Только логика для категории (Flatpickr полностью удалён) -->
 <script>
-// Инициализация календарей при загрузке страницы
+// Логика для поля "Категория"
 document.addEventListener('DOMContentLoaded', function() {
-    // Настройка Flatpickr для всех полей с датами
-    flatpickr(".datepicker", {
-        locale: "ru",
-        dateFormat: "Y-m-d",
-        allowInput: true,
-        altInput: true,
-        altFormat: "d.m.Y",
-        theme: "material_blue"
-    });
-
-    // Логика для поля "Категория"
-    const categorySelect = document.getElementById('category');
-    const customDiv = document.getElementById('customCategoryDiv');
-    const customInput = document.getElementById('category_custom');
-
-    categorySelect.addEventListener('change', function() {
-        if (this.value === '7') {
-            customDiv.style.display = 'block';
-            customInput.required = true;
-            customInput.focus();
-        } else {
-            customDiv.style.display = 'none';
-            customInput.required = false;
-            customInput.value = ''; // Очищаем поле
-        }
-    });
+    var categorySelect = document.getElementById('category');
+    var customDiv = document.getElementById('customCategoryDiv');
+    var customInput = document.getElementById('category_custom');
+    
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            if (this.value === '7') {
+                customDiv.style.display = 'block';
+                customInput.required = true;
+            } else {
+                customDiv.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        });
+    }
 
     // Валидация формы перед отправкой
-    document.getElementById('dataForm').addEventListener('submit', function(e) {
-        if (categorySelect.value === '7' && !customInput.value.trim()) {
-            e.preventDefault();
-            alert('Пожалуйста, введите свой вариант категории');
-            customInput.focus();
-        }
-    });
+    var dataForm = document.getElementById('dataForm');
+    if (dataForm) {
+        dataForm.addEventListener('submit', function(e) {
+            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
+                e.preventDefault();
+                alert('Пожалуйста, введите свой вариант категории');
+                customInput.focus();
+            }
+        });
+    }
 });
 </script>
-
-<style>
-/* Дополнительные стили для красоты */
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-.card-header {
-    font-weight: bold;
-}
-.form-label {
-    font-weight: 500;
-}
-/* Стили для календаря */
-.flatpickr-input {
-    background-color: #fff;
-}
-</style>
 {% endblock %}

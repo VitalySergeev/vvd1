@@ -276,7 +276,7 @@ def input_data():
 @login_required
 def generate_simple_report():
     """Генерирует подробный отчет в Excel"""
-    entries = PersonData.query.filter_by(user_id=current_user.id).all()
+    entries = PersonData.query.all() #filter_by(user_id=current_user.id).
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -295,7 +295,9 @@ def generate_simple_report():
     # Данные
     for entry in entries:
         # Получаем имя автора
-        author_name = entry.author.full_name if entry.author.full_name else entry.author.username
+        #author_name = entry.author.full_name if entry.author.full_name else entry.author.username
+        author_name = entry.author.full_name if entry.author and entry.author.full_name else (
+            entry.author.username if entry.author else 'Неизвестно')
 
         row = [
             entry.id,
