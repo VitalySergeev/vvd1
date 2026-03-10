@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Ввод данных{% endblock %}
+
+{% block extra_head %}
+<!-- Подключаем Flatpickr для красивых календарей -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">📝 Ввод общих данных</h2>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Форма ввода</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="dataForm">
+                <!-- 1. Общие данные (ФИО и дата рождения) -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">👤 Личные данные</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="last_name" class="form-label">Фамилия *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="first_name" class="form-label">Имя *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="middle_name" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="middle_name" name="middle_name">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="birth_date" class="form-label">Дата рождения</label>
+                                <input type="text" class="form-control datepicker" id="birth_date" name="birth_date" placeholder="Выберите дату">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Первая группа полей с датами -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📅 Первая группа</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="date2" class="form-label">Дата 2</label>
+                                <input type="text" class="form-control datepicker" id="date2" name="date2" placeholder="Выберите дату">
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label for="place2" class="form-label">Место 2</label>
+                                <input type="text" class="form-control" id="place2" name="place2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Категория (умное поле) -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">🏷️ Категория</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Выберите категорию</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">-- Выберите --</option>
+                                    <option value="1">Параметр 1</option>
+                                    <option value="2">Параметр 2</option>
+                                    <option value="3">Параметр 3</option>
+                                    <option value="4">Параметр 4</option>
+                                    <option value="5">Параметр 5</option>
+                                    <option value="6">Параметр 6</option>
+                                    <option value="7">✏️ Свой вариант</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3" id="customCategoryDiv" style="display: none;">
+                                <label for="category_custom" class="form-label">Свой вариант</label>
+                                <input type="text" class="form-control" id="category_custom" name="category_custom" placeholder="Введите свой вариант">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Должность, звание, номер -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">💼 Служебная информация</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="position" class="form-label">Должность</label>
+                                <input type="text" class="form-control" id="position" name="position">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="rank" class="form-label">Звание</label>
+                                <input type="text" class="form-control" id="rank" name="rank">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="number" class="form-label">Номер</label>
+                                <input type="text" class="form-control" id="number" name="number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. ЛП и связанные поля -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">🏥 ЛП (Лечебное учреждение)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="lp" class="form-label">ЛП</label>
+                                <input type="text" class="form-control" id="lp" name="lp">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lp_reason" class="form-label">Причина ЛП</label>
+                                <input type="text" class="form-control" id="lp_reason" name="lp_reason">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Места и ППР -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📍 Места и ППР</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="place" class="form-label">Место</label>
+                                <input type="text" class="form-control" id="place" name="place">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ppr" class="form-label">ППР</label>
+                                <input type="text" class="form-control" id="ppr" name="ppr">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="place2_field" class="form-label">Место 2</label>
+                                <input type="text" class="form-control" id="place2_field" name="place2_field">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Оставшиеся даты -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📅 Остальные даты</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="date4" class="form-label">Дата 4</label>
+                                <input type="text" class="form-control datepicker" id="date4" name="date4" placeholder="Выберите дату">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ee" class="form-label">ЭЭ</label>
+                                <input type="text" class="form-control datepicker" id="ee" name="ee" placeholder="Выберите дату">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ee4" class="form-label">ЭЭ4</label>
+                                <input type="text" class="form-control datepicker" id="ee4" name="ee4" placeholder="Выберите дату">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">💾 Сохранить данные</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">↩️ Вернуться</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Инициализация календарей при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Настройка Flatpickr для всех полей с датами
+    flatpickr(".datepicker", {
+        locale: "ru",
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        altInput: true,
+        altFormat: "d.m.Y",
+        theme: "material_blue"
+    });
+
+    // Логика для поля "Категория"
+    const categorySelect = document.getElementById('category');
+    const customDiv = document.getElementById('customCategoryDiv');
+    const customInput = document.getElementById('category_custom');
+
+    categorySelect.addEventListener('change', function() {
+        if (this.value === '7') {
+            customDiv.style.display = 'block';
+            customInput.required = true;
+            customInput.focus();
+        } else {
+            customDiv.style.display = 'none';
+            customInput.required = false;
+            customInput.value = ''; // Очищаем поле
+        }
+    });
+
+    // Валидация формы перед отправкой
+    document.getElementById('dataForm').addEventListener('submit', function(e) {
+        if (categorySelect.value === '7' && !customInput.value.trim()) {
+            e.preventDefault();
+            alert('Пожалуйста, введите свой вариант категории');
+            customInput.focus();
+        }
+    });
+});
+</script>
+
+<style>
+/* Дополнительные стили для красоты */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.card-header {
+    font-weight: bold;
+}
+.form-label {
+    font-weight: 500;
+}
+/* Стили для календаря */
+.flatpickr-input {
+    background-color: #fff;
+}
+</style>
+{% endblock %}
