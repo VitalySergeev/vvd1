@@ -14,7 +14,7 @@ from functools import wraps
 import socket
 
 # Создаем приложение
-app = Flask(__name__)
+git commit -m "Очистка репозитория от служебных файлов"app = Flask(__name__)
 app.config['SECRET_KEY'] = 'твой-супер-секретный-ключ-придумай-свой'  # Обязательно измени!
 
 # Создаем путь к папке database в той же директории, где находится app.py
