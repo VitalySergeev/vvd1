@@ -46,7 +46,7 @@ def admin_required(f):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id)) #User.query.get(int(user_id))
 
 def save_edit_history(record_id, user_id, changes):
     """
@@ -85,14 +85,44 @@ def edit_record(record_id):
     # Убрали проверку на владельца - теперь любой может редактировать любую запись
     if request.method == 'POST':
         # Функция-помощник для безопасного получения даты
-        def get_date(field_name):
+        def get_date(field_name):   #Отладка 2
             date_str = request.form.get(field_name)
+            # ВАЖНО: печатаем имя поля, которое пришло в параметре field_name
+            print(f"🔍 ПОЛУЧЕНО ЗНАЧЕНИЕ ДЛЯ {field_name}: '{date_str}'")
             if date_str:
                 try:
-                    return datetime.strptime(date_str, '%Y-%m-%d').date()
-                except (ValueError, TypeError):
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    print(f"✅ УСПЕШНО ПРЕОБРАЗОВАНО {field_name}: {parsed_date}")
+                    return parsed_date
+                except (ValueError, TypeError) as e:
+                    print(f"❌ ОШИБКА ПРЕОБРАЗОВАНИЯ {field_name}: {e}")
                     return None
+            print(f"⚠️ ПУСТОЕ ЗНАЧЕНИЕ ДЛЯ {field_name}")
             return None
+
+        # def get_date(field_name): # Отладка
+        #     date_str = request.form.get(field_name)
+        #     # ИСПРАВЛЕНО: теперь печатаем имя поля и его значение
+        #     print(f"🔍 ПОЛУЧЕНО ЗНАЧЕНИЕ ДЛЯ {field_name}: '{date_str}'")
+        #     if date_str:
+        #         try:
+        #             parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        #             print(f"✅ УСПЕШНО ПРЕОБРАЗОВАНО {field_name}: {parsed_date}")
+        #             return parsed_date
+        #         except (ValueError, TypeError) as e:
+        #             print(f"❌ ОШИБКА ПРЕОБРАЗОВАНИЯ {field_name}: {e}")
+        #             return None
+        #     print(f"⚠️ ПУСТОЕ ЗНАЧЕНИЕ ДЛЯ {field_name}")
+        #     return None
+
+        # def get_date(field_name): # Была такая ф-ия на момент эксперимента
+        #     date_str = request.form.get(field_name)
+        #     if date_str:
+        #         try:
+        #             return datetime.strptime(date_str, '%Y-%m-%d').date()
+        #         except (ValueError, TypeError):
+        #             return None
+        #     return None
 
         # Собираем изменения
         changes = {}
@@ -113,10 +143,52 @@ def edit_record(record_id):
         record.last_name = check_change('last_name', request.form.get('last_name'))
         record.first_name = check_change('first_name', request.form.get('first_name'))
         record.middle_name = check_change('middle_name', request.form.get('middle_name'))
-        record.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date)
+        #проверка даты
+        #record.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date) #Было
+        # Исправление даты рождения
+        birth_date_from_form = request.form.get('birth_date')
+        if birth_date_from_form:
+            new_birth_date = get_date('birth_date')
+            if new_birth_date != record.birth_date:
+                changes['birth_date'] = {'old': record.birth_date, 'new': new_birth_date}
+                record.birth_date = new_birth_date
+
+        # birth_date_from_form = request.form.get('birth_date')  # Отладка 1
+        # print(f"📅 ПОЛЕ birth_date из формы: '{birth_date_from_form}'")
+        # if birth_date_from_form:
+        #     # ВЫЗЫВАЕМ get_date НАПРЯМУЮ, а НЕ через check_change
+        #     new_birth_date = get_date('birth_date')
+        #     if new_birth_date != record.birth_date:
+        #         changes['birth_date'] = {'old': record.birth_date, 'new': new_birth_date}
+        #         record.birth_date = new_birth_date
+        #         print(f"✅ Дата рождения изменена на {new_birth_date}")
+        # else:
+        #     print(f"⚠️ Дата рождения не пришла из формы, оставляем: {record.birth_date}")
 
         # Дата 2 и место
-        record.date2 = check_change('date2', request.form.get('date2'), get_date)
+        #record.date2 = check_change('date2', request.form.get('date2'), get_date)
+
+        #Исправление Даты2
+        date2_from_form = request.form.get('date2')
+        if date2_from_form:
+            new_date2 = get_date('date2')
+            if new_date2 != record.date2:
+                changes['date2'] = {'old': record.date2, 'new': new_date2}
+                record.date2 = new_date2
+
+        # Отладка 1
+        # date2_from_form = request.form.get('date2')
+        # print(f"📅 ПОЛЕ date2 из формы: '{date2_from_form}'")
+        # if date2_from_form:
+        #     # ВЫЗЫВАЕМ get_date НАПРЯМУЮ, а НЕ через check_change
+        #     new_date2 = get_date('date2')
+        #     if new_date2 != record.date2:
+        #         changes['date2'] = {'old': record.date2, 'new': new_date2}
+        #         record.date2 = new_date2
+        #         print(f"✅ Дата 2 изменена на {new_date2}")
+        # else:
+        #     print(f"⚠️ Дата 2 не пришла из формы, оставляем: {record.date2}")
+
         record.place2 = check_change('place2', request.form.get('place2'))
 
         # Категория
@@ -140,9 +212,33 @@ def edit_record(record_id):
         record.place = check_change('place', request.form.get('place'))
         record.ppr = check_change('ppr', request.form.get('ppr'))
         record.place2_field = check_change('place2_field', request.form.get('place2_field'))
-        record.date4 = check_change('date4', request.form.get('date4'), get_date)
-        record.ee = check_change('ee', request.form.get('ee'), get_date)
-        record.ee4 = check_change('ee4', request.form.get('ee4'), get_date)
+
+        #record.date4 = check_change('date4', request.form.get('date4'), get_date)
+        # ИСПРАВЛЕНИЕ ДЛЯ ДАТЫ 4
+        date4_from_form = request.form.get('date4')
+        if date4_from_form:
+            new_date4 = get_date('date4')
+            if new_date4 != record.date4:
+                changes['date4'] = {'old': record.date4, 'new': new_date4}
+                record.date4 = new_date4
+
+        #record.ee = check_change('ee', request.form.get('ee'), get_date)
+        # ИСПРАВЛЕНИЕ ДЛЯ ЭЭ
+        ee_from_form = request.form.get('ee')
+        if ee_from_form:
+            new_ee = get_date('ee')
+            if new_ee != record.ee:
+                changes['ee'] = {'old': record.ee, 'new': new_ee}
+                record.ee = new_ee
+
+        #record.ee4 = check_change('ee4', request.form.get('ee4'), get_date)
+        # ИСПРАВЛЕНИЕ ДЛЯ ЭЭ4
+        ee4_from_form = request.form.get('ee4')
+        if ee4_from_form:
+            new_ee4 = get_date('ee4')
+            if new_ee4 != record.ee4:
+                changes['ee4'] = {'old': record.ee4, 'new': new_ee4}
+                record.ee4 = new_ee4
 
         # Если есть изменения - сохраняем
         if changes:
