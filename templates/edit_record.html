@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Редактирование записи #{{ record.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">✏️ Редактирование записи #{{ record.id }}</h2>
+
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">Редактирование данных</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="editForm">
+                <!-- 1. Общие данные -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">👤 Личные данные</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="last_name" class="form-label">Фамилия *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ record.last_name or '' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="first_name" class="form-label">Имя *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ record.first_name or '' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="middle_name" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ record.middle_name or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="birth_date" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ record.birth_date.strftime('%Y-%m-%d') if record.birth_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Первая группа -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📅 Первая группа</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="date2" class="form-label">Дата 2</label>
+                                <input type="date" class="form-control" id="date2" name="date2" value="{{ record.date2.strftime('%Y-%m-%d') if record.date2 else '' }}">
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label for="place2" class="form-label">Место 2</label>
+                                <input type="text" class="form-control" id="place2" name="place2" value="{{ record.place2 or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Категория -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">🏷️ Категория</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Выберите категорию</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">-- Выберите --</option>
+                                    {% for i in range(1, 7) %}
+                                    <option value="{{ i }}" {% if record.category == 'Параметр ' + i|string %}selected{% endif %}>Параметр {{ i }}</option>
+                                    {% endfor %}
+                                    <option value="7" {% if record.category_custom %}selected{% endif %}>✏️ Свой вариант</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3" id="customCategoryDiv" style="{% if not record.category_custom %}display: none;{% endif %}">
+                                <label for="category_custom" class="form-label">Свой вариант</label>
+                                <input type="text" class="form-control" id="category_custom" name="category_custom" value="{{ record.category_custom or '' }}" placeholder="Введите свой вариант">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Должность, звание, номер -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">💼 Служебная информация</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="position" class="form-label">Должность</label>
+                                <input type="text" class="form-control" id="position" name="position" value="{{ record.position or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="rank" class="form-label">Звание</label>
+                                <input type="text" class="form-control" id="rank" name="rank" value="{{ record.rank or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="number" class="form-label">Номер</label>
+                                <input type="text" class="form-control" id="number" name="number" value="{{ record.number or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. ЛП и причина -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">🏥 ЛП</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="lp" class="form-label">ЛП</label>
+                                <input type="text" class="form-control" id="lp" name="lp" value="{{ record.lp or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lp_reason" class="form-label">Причина ЛП</label>
+                                <input type="text" class="form-control" id="lp_reason" name="lp_reason" value="{{ record.lp_reason or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Места и ППР -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📍 Места</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="place" class="form-label">Место</label>
+                                <input type="text" class="form-control" id="place" name="place" value="{{ record.place or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ppr" class="form-label">ППР</label>
+                                <input type="text" class="form-control" id="ppr" name="ppr" value="{{ record.ppr or '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="place2_field" class="form-label">Место 2</label>
+                                <input type="text" class="form-control" id="place2_field" name="place2_field" value="{{ record.place2_field or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Остальные даты -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">📅 Остальные даты</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="date4" class="form-label">Дата 4</label>
+                                <input type="date" class="form-control" id="date4" name="date4" value="{{ record.date4.strftime('%Y-%m-%d') if record.date4 else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ee" class="form-label">ЭЭ</label>
+                                <input type="date" class="form-control" id="ee" name="ee" value="{{ record.ee.strftime('%Y-%m-%d') if record.ee else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ee4" class="form-label">ЭЭ4</label>
+                                <input type="date" class="form-control" id="ee4" name="ee4" value="{{ record.ee4.strftime('%Y-%m-%d') if record.ee4 else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-warning btn-lg">💾 Сохранить изменения</button>
+                    <a href="{{ url_for('all_records') }}" class="btn btn-secondary btn-lg">↩️ Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Логика для поля "Категория"
+document.addEventListener('DOMContentLoaded', function() {
+    var categorySelect = document.getElementById('category');
+    var customDiv = document.getElementById('customCategoryDiv');
+    var customInput = document.getElementById('category_custom');
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            if (this.value === '7') {
+                customDiv.style.display = 'block';
+                customInput.required = true;
+            } else {
+                customDiv.style.display = 'none';
+                customInput.required = false;
+            }
+        });
+    }
+
+    // Валидация формы
+    var editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
+                e.preventDefault();
+                alert('Пожалуйста, введите свой вариант категории');
+                customInput.focus();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,59 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Рабочий стол{% endblock %}
+
 {% block content %}
-<div class="p-5 mb-4 bg-light rounded-3">
-    <div class="container-fluid py-5">
-        <h1 class="display-5 fw-bold">Привет, {{ name }}!</h1>
-        <p class="col-md-8 fs-4">
-            <!--** Убрал вывод текущей роли пользователя
-            {% if current_user.is_admin() %}
-                Вы вошли как <span class="badge bg-danger">Администратор</span>
-            {% else %}
-                Вы вошли как <span class="badge bg-secondary">Пользователь</span>
-            {% endif %}
-            **-->
-        </p>
+<div class="container">
+    <h2 class="mb-4">Добро пожаловать, {{ name }}!</h2>
 
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Работа с данными</h5>
-                    </div>
-                    <div class="card-body">
-                        <a href="{{ url_for('input_data') }}" class="btn btn-primary btn-lg me-2">📝 Ввести данные</a>
-                        <a href="{{ url_for('generate_simple_report') }}" class="btn btn-success btn-lg">📊 Скачать отчет</a>
-                    </div>
+    <div class="row">
+        <!-- Карточка для ввода данных -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📝 Ввод данных</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Добавьте новую запись в базу данных.</p>
+                    <a href="{{ url_for('input_data') }}" class="btn btn-success btn-lg">✏️ Ввод данных</a>
                 </div>
             </div>
-
-            {% if current_user.is_admin() %}
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">Администрирование</h5>
-                    </div>
-                    <div class="card-body">
-                        <a href="{{ url_for('user_list') }}" class="btn btn-danger btn-lg">👥 Управление пользователями</a>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
 
-        <!--** убрал карточку смены пароля на странице
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Настройки</h5>
-                    </div>
-                    <div class="card-body">
-                        <a href="{{ url_for('change_password') }}" class="btn btn-warning">🔐 Сменить пароль</a>
-                    </div>
+        <!-- Карточка для формирования отчета -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Отчеты</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Скачать отчет в формате Excel.</p>
+                    <a href="{{ url_for('generate_simple_report') }}" class="btn btn-info btn-lg">📥 Скачать отчет</a>
                 </div>
             </div>
-        </div> **-->
+        </div>
     </div>
+
+    <!-- Блок для просмотра записей (для всех пользователей) -->
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📋 Общая база данных</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Просмотр всех записей в системе.</p>
+                    <a href="{{ url_for('all_records') }}" class="btn btn-primary">📋 Все записи</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Блок для администратора (только для админа) -->
+    {% if current_user.is_admin() %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">🔧 Администрирование</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('user_list') }}" class="btn btn-warning">👥 Управление пользователями</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

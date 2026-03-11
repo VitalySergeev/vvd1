@@ -32,7 +32,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Импортируем модели ПОСЛЕ инициализации db
-from models import User, PersonData
+from models import User, PersonData, EditHistory
 
 # Декоратор для проверки прав администратора
 def admin_required(f):
@@ -48,8 +48,128 @@ def admin_required(f):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def save_edit_history(record_id, user_id, changes):
+    """
+    Сохраняет историю изменений
+    changes - словарь вида {'field_name': {'old': old_value, 'new': new_value}}
+    """
+    for field_name, values in changes.items():
+        # Не сохраняем пустые изменения
+        if values['old'] != values['new']:
+            history_entry = EditHistory(
+                record_id=record_id,
+                user_id=user_id,
+                field_name=field_name,
+                old_value=str(values['old']) if values['old'] else '',
+                new_value=str(values['new']) if values['new'] else ''
+            )
+            db.session.add(history_entry)
+    db.session.commit()
 
-# --- УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (ТОЛЬКО ДЛЯ АДМИНА) ---
+
+@app.route('/records')
+@login_required
+def all_records():
+    """Страница со ВСЕМИ записями для всех пользователей"""
+    # Все пользователи видят все записи
+    records = PersonData.query.order_by(PersonData.created_at.desc()).all()
+    return render_template('all_records.html', records=records)
+
+
+@app.route('/record/edit/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+def edit_record(record_id):
+    """Редактирование существующей записи - доступно всем пользователям"""
+    record = PersonData.query.get_or_404(record_id)
+
+    # Убрали проверку на владельца - теперь любой может редактировать любую запись
+    if request.method == 'POST':
+        # Функция-помощник для безопасного получения даты
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # Собираем изменения
+        changes = {}
+
+        # Функция для проверки изменений
+        def check_change(field, form_value, cast_func=None):
+            old = getattr(record, field)
+            if cast_func:
+                new = cast_func(form_value)
+            else:
+                new = form_value if form_value else None
+
+            if old != new:
+                changes[field] = {'old': old, 'new': new}
+            return new
+
+        # Общие данные
+        record.last_name = check_change('last_name', request.form.get('last_name'))
+        record.first_name = check_change('first_name', request.form.get('first_name'))
+        record.middle_name = check_change('middle_name', request.form.get('middle_name'))
+        record.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date)
+
+        # Дата 2 и место
+        record.date2 = check_change('date2', request.form.get('date2'), get_date)
+        record.place2 = check_change('place2', request.form.get('place2'))
+
+        # Категория
+        category = request.form.get('category')
+        category_custom = None
+        if category == '7':
+            category_custom = request.form.get('category_custom')
+            category = category_custom
+        elif category:
+            category = f"Параметр {category}"
+
+        record.category = check_change('category', category)
+        record.category_custom = check_change('category_custom', category_custom)
+
+        # Остальные поля
+        record.position = check_change('position', request.form.get('position'))
+        record.rank = check_change('rank', request.form.get('rank'))
+        record.number = check_change('number', request.form.get('number'))
+        record.lp = check_change('lp', request.form.get('lp'))
+        record.lp_reason = check_change('lp_reason', request.form.get('lp_reason'))
+        record.place = check_change('place', request.form.get('place'))
+        record.ppr = check_change('ppr', request.form.get('ppr'))
+        record.place2_field = check_change('place2_field', request.form.get('place2_field'))
+        record.date4 = check_change('date4', request.form.get('date4'), get_date)
+        record.ee = check_change('ee', request.form.get('ee'), get_date)
+        record.ee4 = check_change('ee4', request.form.get('ee4'), get_date)
+
+        # Если есть изменения - сохраняем
+        if changes:
+            # Обновляем время изменения
+            record.updated_at = datetime.now()
+            db.session.commit()
+
+            # Сохраняем историю изменений
+            save_edit_history(record.id, current_user.id, changes)
+
+            flash(f'Запись #{record.id} успешно обновлена! Изменено полей: {len(changes)}')
+        else:
+            flash('Нет изменений для сохранения')
+
+        return redirect(url_for('all_records'))
+
+    return render_template('edit_record.html', record=record)
+
+@app.route('/record/history/<int:record_id>')
+@login_required
+def record_history(record_id):
+    """Просмотр истории изменений записи - доступно всем"""
+    record = PersonData.query.get_or_404(record_id)
+
+    # Убрали проверку на владельца - теперь любой может смотреть историю любой записи
+    history = EditHistory.query.filter_by(record_id=record_id).order_by(EditHistory.edited_at.desc()).all()
+    return render_template('record_history.html', record=record, history=history)
 
 @app.route('/users')
 @login_required
@@ -145,6 +265,7 @@ def user_delete(user_id):
 
 @app.route('/change-password', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def change_password():
     """Смена пароля для текущего пользователя"""
     if request.method == 'POST':
