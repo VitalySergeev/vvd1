@@ -82,6 +82,7 @@
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ url_for('edit_record', record_id=record.id) }}" class="btn btn-warning">✏️ Ред</a>
                                     <a href="{{ url_for('record_history', record_id=record.id) }}" class="btn btn-info">📜 История</a>
+                                    <a href="{{ url_for('manage_relatives', person_id=record.id) }}" class="btn btn-success">👨‍👩‍👧‍👦 Родств</a>
                                 </div>
                             </td>
                         </tr>

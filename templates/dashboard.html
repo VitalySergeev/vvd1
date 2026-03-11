@@ -5,6 +5,7 @@
 <div class="container">
     <h2 class="mb-4">Добро пожаловать, {{ name }}!</h2>
 
+    <!-- ДВЕ ОСНОВНЫЕ КАРТОЧКИ: ВВОД И ОТЧЕТЫ -->
     <div class="row">
         <!-- Карточка для ввода данных -->
         <div class="col-md-6 mb-4">
@@ -19,21 +20,31 @@
             </div>
         </div>
 
-        <!-- Карточка для формирования отчета -->
+        <!-- Карточка для отчетов (6 кнопок) -->
         <div class="col-md-6 mb-4">
             <div class="card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">📊 Отчеты</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">Скачать отчет в формате Excel.</p>
-                    <a href="{{ url_for('generate_simple_report') }}" class="btn btn-info btn-lg">📥 Скачать отчет</a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('report_r2026') }}" class="btn btn-primary btn-lg w-100 mb-3">📥 Р2026</a>
+                            <a href="{{ url_for('report_t392') }}" class="btn btn-outline-primary btn-lg w-100 mb-3">📥 Т-392</a>
+                            <a href="{{ url_for('report_otchet66') }}" class="btn btn-outline-primary btn-lg w-100 mb-3">📥 Отчет 66</a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('report_form') }}" class="btn btn-outline-primary btn-lg w-100 mb-3">📥 Форма</a>
+                            <a href="{{ url_for('report_flag') }}" class="btn btn-outline-primary btn-lg w-100 mb-3">📥 Отчет Флаг</a>
+                            <a href="{{ url_for('report_zayavka') }}" class="btn btn-outline-primary btn-lg w-100 mb-3">📥 Заявка</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Блок для просмотра записей (для всех пользователей) -->
+    <!-- БЛОК ДЛЯ ПРОСМОТРА ВСЕХ ЗАПИСЕЙ -->
     <div class="row mt-2">
         <div class="col-12">
             <div class="card">
@@ -48,7 +59,7 @@
         </div>
     </div>
 
-    <!-- Блок для администратора (только для админа) -->
+    <!-- БЛОК ДЛЯ АДМИНИСТРАТОРА (виден только админу) -->
     {% if current_user.is_admin() %}
     <div class="row mt-4">
         <div class="col-12">

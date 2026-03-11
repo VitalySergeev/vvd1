@@ -12,6 +12,7 @@ from extensions import db, login_manager
 # Разграничение прав
 from functools import wraps
 import socket
+from models import User, PersonData, EditHistory, Relative  # Добавили Relative
 
 # Создаем приложение
 app = Flask(__name__)
@@ -604,17 +605,148 @@ def input_data():
 
     return render_template('input_form.html')
 
-@app.route('/report/simple')
+
+@app.route('/person/<int:person_id>/relatives', methods=['GET', 'POST'])
 @login_required
-def generate_simple_report():
-    """Генерирует подробный отчет в Excel"""
-    entries = PersonData.query.all() #filter_by(user_id=current_user.id).
+def manage_relatives(person_id):
+    """Управление родственниками для конкретной записи"""
+    person = PersonData.query.get_or_404(person_id)
+
+    if request.method == 'POST':
+        # Функция для получения даты
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # Создаем нового родственника
+        relative = Relative(
+            person_data_id=person.id,
+            last_name=request.form.get('last_name'),
+            first_name=request.form.get('first_name'),
+            middle_name=request.form.get('middle_name'),
+            birth_date=get_date('birth_date'),
+            registration_address=request.form.get('registration_address'),
+            actual_address=request.form.get('actual_address'),
+            phone=request.form.get('phone'),
+            relation_degree=request.form.get('relation_degree'),
+            size=request.form.get('size'),
+            period_assignment=request.form.get('period_assignment')
+        )
+
+        db.session.add(relative)
+        db.session.commit()
+        flash('Родственник добавлен!')
+        return redirect(url_for('manage_relatives', person_id=person.id))
+
+    # Получаем всех родственников для этой записи
+    relatives = Relative.query.filter_by(person_data_id=person.id).all()
+
+    return render_template('relatives.html', person=person, relatives=relatives)
+
+@app.route('/relative/delete/<int:relative_id>')
+@login_required
+def delete_relative(relative_id):
+    """Удаление родственника"""
+    relative = Relative.query.get_or_404(relative_id)
+    person_id = relative.person_data_id
+    db.session.delete(relative)
+    db.session.commit()
+    flash('Родственник удален!')
+    return redirect(url_for('manage_relatives', person_id=person_id))
+
+# @app.route('/report/simple')
+# @login_required
+# def generate_simple_report():
+#     """Генерирует подробный отчет в Excel"""
+#     entries = PersonData.query.all() #filter_by(user_id=current_user.id).
+#
+#     wb = openpyxl.Workbook()
+#     ws = wb.active
+#     ws.title = "Полный отчет"
+#
+#     # Заголовки для всех полей
+#     headers = [
+#         'ID', 'Фамилия', 'Имя', 'Отчество', 'Дата рождения',
+#         'Дата 2', 'Место 2', 'Категория', 'Свой вариант',
+#         'Должность', 'Звание', 'Номер', 'ЛП', 'Причина ЛП',
+#         'Место', 'ППР', 'Место 2', 'Дата 4', 'ЭЭ', 'ЭЭ4',
+#         'Дата создания', 'Автор'
+#     ]
+#     ws.append(headers)
+#
+#     # Данные
+#     for entry in entries:
+#         # Получаем имя автора
+#         #author_name = entry.author.full_name if entry.author.full_name else entry.author.username
+#         author_name = entry.author.full_name if entry.author and entry.author.full_name else (
+#             entry.author.username if entry.author else 'Неизвестно')
+#
+#         row = [
+#             entry.id,
+#             entry.last_name,
+#             entry.first_name,
+#             entry.middle_name,
+#             entry.birth_date.strftime('%d.%m.%Y') if entry.birth_date else '',
+#             entry.date2.strftime('%d.%m.%Y') if entry.date2 else '',
+#             entry.place2,
+#             entry.category,
+#             entry.category_custom,
+#             entry.position,
+#             entry.rank,
+#             entry.number,
+#             entry.lp,
+#             entry.lp_reason,
+#             entry.place,
+#             entry.ppr,
+#             entry.place2_field,
+#             entry.date4.strftime('%d.%m.%Y') if entry.date4 else '',
+#             entry.ee.strftime('%d.%m.%Y') if entry.ee else '',
+#             entry.ee4.strftime('%d.%m.%Y') if entry.ee4 else '',
+#             entry.created_at.strftime('%d.%m.%Y %H:%M'),
+#             author_name
+#         ]
+#         ws.append(row)
+#
+#     # Автоматическая ширина колонок
+#     for column in ws.columns:
+#         max_length = 0
+#         column_letter = column[0].column_letter
+#         for cell in column:
+#             try:
+#                 if len(str(cell.value)) > max_length:
+#                     max_length = len(str(cell.value))
+#             except:
+#                 pass
+#         adjusted_width = min(max_length + 2, 50)
+#         ws.column_dimensions[column_letter].width = adjusted_width
+#
+#     output = BytesIO()
+#     wb.save(output)
+#     output.seek(0)
+#
+#     return send_file(
+#         output,
+#         as_attachment=True,
+#         download_name=f'отчет_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+#         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+#     )
+
+# ОТЧЕТЫ
+@app.route('/report/r2026')
+@login_required
+def report_r2026():
+    """Отчет Р2026 - все записи"""
+    entries = PersonData.query.all()
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Полный отчет"
+    ws.title = "Отчет Р2026"
 
-    # Заголовки для всех полей
     headers = [
         'ID', 'Фамилия', 'Имя', 'Отчество', 'Дата рождения',
         'Дата 2', 'Место 2', 'Категория', 'Свой вариант',
@@ -624,10 +756,7 @@ def generate_simple_report():
     ]
     ws.append(headers)
 
-    # Данные
     for entry in entries:
-        # Получаем имя автора
-        #author_name = entry.author.full_name if entry.author.full_name else entry.author.username
         author_name = entry.author.full_name if entry.author and entry.author.full_name else (
             entry.author.username if entry.author else 'Неизвестно')
 
@@ -677,9 +806,46 @@ def generate_simple_report():
     return send_file(
         output,
         as_attachment=True,
-        download_name=f'отчет_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+        download_name=f'Р2026_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+@app.route('/report/t392')
+@login_required
+def report_t392():
+    """Отчет Т-392 (заглушка)"""
+    flash('Отчет Т-392 находится в разработке')
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/report/otchet66')
+@login_required
+def report_otchet66():
+    """Отчет 66 (заглушка)"""
+    flash('Отчет 66 находится в разработке')
+    return redirect(url_for('dashboard'))
+
+@app.route('/report/form')
+@login_required
+def report_form():
+    """Отчет Форма (заглушка)"""
+    flash('Отчет Форма находится в разработке')
+    return redirect(url_for('dashboard'))
+
+@app.route('/report/flag')
+@login_required
+def report_flag():
+    """Отчет Флаг (заглушка)"""
+    flash('Отчет Флаг находится в разработке')
+    return redirect(url_for('dashboard'))
+
+@app.route('/report/zayavka')
+@login_required
+def report_zayavka():
+    """Отчет Заявка (заглушка)"""
+    flash('Отчет Заявка находится в разработке')
+    return redirect(url_for('dashboard'))
 
 # ЕДИНСТВЕННЫЙ БЛОК В КОНЦЕ ФАЙЛА (замени то, что сейчас в строках 318-341)
 if __name__ == '__main__':
