@@ -28,7 +28,7 @@ class User(UserMixin, db.Model):
         return self.is_admin()
 
 
-class PersonData(db.Model):  # Класс переименован!
+class PersonData(db.Model):
     """Модель для введенных данных"""
     __tablename__ = 'person_data'  # Новое имя таблицы!
     __table_args__ = {'extend_existing': True}  # Добавлено!
@@ -69,6 +69,11 @@ class PersonData(db.Model):  # Класс переименован!
     # Параметр 'cascade' гарантирует, что при удалении записи удалится и её история.
     edit_history = db.relationship('EditHistory', backref='record', lazy='dynamic', cascade='all, delete-orphan')
 
+    # Связь с родственниками
+    #relatives = db.relationship('Relative', backref='person', lazy=True, cascade='all, delete-orphan')
+    # ИЗМЕНЕНО: используем уникальное имя для обратной связи
+    relatives_list = db.relationship('Relative', back_populates='main_person', lazy=True, cascade='all, delete-orphan')
+
 def __repr__(self):
         return f'<PersonData {self.last_name} {self.first_name}>'
 
@@ -91,3 +96,75 @@ class EditHistory(db.Model):
 
     def __repr__(self):
         return f'<EditHistory {self.record_id} {self.field_name} {self.edited_at}>'
+
+class Relative(db.Model):
+    """Модель для родственников"""
+    __tablename__ = 'relatives'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    person_data_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
+
+    # Основные данные родственника
+    last_name = db.Column(db.String(100))
+    first_name = db.Column(db.String(100))
+    middle_name = db.Column(db.String(100))
+    birth_date = db.Column(db.Date)
+
+    # Адреса
+    registration_address = db.Column(db.String(500))
+    actual_address = db.Column(db.String(500))
+
+    # Контактные данные
+    phone = db.Column(db.String(50))
+
+    # Информация о родстве
+    relation_degree = db.Column(db.String(100))
+
+    # Дополнительные поля
+    size = db.Column(db.String(100))
+    period_assignment = db.Column(db.String(200))
+
+    # ИЗМЕНЕНО: используем новое имя для связи
+    main_person = db.relationship('PersonData', back_populates='relatives_list')
+
+    def __repr__(self):
+        return f'<Relative {self.last_name} {self.first_name}>'
+
+
+# class Relative(db.Model):
+#     """Модель для родственников"""
+#     __tablename__ = 'relatives'
+#     __table_args__ = {'extend_existing': True}
+#
+#     id = db.Column(db.Integer, primary_key=True)
+#     person_data_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
+#
+#     # Основные данные родственника
+#     last_name = db.Column(db.String(100))
+#     first_name = db.Column(db.String(100))
+#     middle_name = db.Column(db.String(100))
+#     birth_date = db.Column(db.Date)
+#
+#     # Адреса
+#     registration_address = db.Column(db.String(500))
+#     actual_address = db.Column(db.String(500))
+#
+#     # Контактные данные
+#     phone = db.Column(db.String(50))
+#
+#     # Информация о родстве
+#     relation_degree = db.Column(db.String(100))  # Степень родства
+#
+#     # Дополнительные поля
+#     size = db.Column(db.String(100))  # Размер (что именно?)
+#     period_assignment = db.Column(db.String(200))  # Период назначения
+#
+#     # # Связь с основной записью
+#     # person = db.relationship('PersonData', backref='relatives')
+#
+#     # ИСПРАВЛЕНО: убрали backref, оставили только relationship
+#     relatives = db.relationship('Relative', back_populates='person', lazy=True, cascade='all, delete-orphan')
+#
+#     def __repr__(self):
+#         return f'<Relative {self.last_name} {self.first_name}>'
