@@ -66,15 +66,56 @@ def save_edit_history(record_id, user_id, changes):
             db.session.add(history_entry)
     db.session.commit()
 
+# @app.route('/records')   #Старый вариант без поиска
+# @login_required
+# def all_records():
+#     """Страница со ВСЕМИ записями для всех пользователей"""
+#     # Все пользователи видят все записи
+#     records = PersonData.query.order_by(PersonData.created_at.desc()).all()
+#     return render_template('all_records.html', records=records)
 
 @app.route('/records')
 @login_required
 def all_records():
-    """Страница со ВСЕМИ записями для всех пользователей"""
-    # Все пользователи видят все записи
-    records = PersonData.query.order_by(PersonData.created_at.desc()).all()
-    return render_template('all_records.html', records=records)
+    """Страница со ВСЕМИ записями для всех пользователей с поиском"""
+    # Базовый запрос
+    query = PersonData.query
 
+    # Поиск по фамилии
+    search_last_name = request.args.get('search_last_name', '')
+    if search_last_name:
+        query = query.filter(PersonData.last_name.ilike(f'%{search_last_name}%'))
+
+    # Поиск по пользователю (автору)
+    search_user = request.args.get('search_user', '')
+    if search_user:
+        query = query.join(PersonData.author).filter(User.full_name.ilike(f'%{search_user}%'))
+
+    # Поиск по дате рождения (точная дата)
+    search_birth_date = request.args.get('search_birth_date', '')
+    if search_birth_date:
+        try:
+            birth_date = datetime.strptime(search_birth_date, '%Y-%m-%d').date()
+            query = query.filter(PersonData.birth_date == birth_date)
+        except ValueError:
+            flash('Неверный формат даты рождения')
+
+    # Получаем отфильтрованные записи
+    records = query.order_by(PersonData.created_at.desc()).all()
+
+    # Статистика (только то, что нужно)
+    total_all_records = PersonData.query.count()  # Общее количество ВСЕХ записей
+    current_records = len(records)                # Количество записей по текущему поиску
+
+    return render_template(
+        'all_records.html',
+        records=records,
+        search_last_name=search_last_name,
+        search_user=search_user,
+        search_birth_date=search_birth_date,
+        total_all_records=total_all_records,
+        current_records=current_records
+    )
 
 @app.route('/record/edit/<int:record_id>', methods=['GET', 'POST'])
 @login_required
@@ -257,15 +298,89 @@ def edit_record(record_id):
 
     return render_template('edit_record.html', record=record)
 
+#
+@app.route('/record/history/<int:record_id>')
+# @login_required
+# def record_history(record_id):
+#     """Просмотр истории изменений записи - доступно всем"""
+#     record = PersonData.query.get_or_404(record_id)
+#
+#     # Убрали проверку на владельца - теперь любой может смотреть историю любой записи
+#     history = EditHistory.query.filter_by(record_id=record_id).order_by(EditHistory.edited_at.desc()).all()
+#     return render_template('record_history.html', record=record, history=history)
+
 @app.route('/record/history/<int:record_id>')
 @login_required
 def record_history(record_id):
-    """Просмотр истории изменений записи - доступно всем"""
+    """Просмотр истории изменений записи с группировкой по коммитам"""
     record = PersonData.query.get_or_404(record_id)
 
-    # Убрали проверку на владельца - теперь любой может смотреть историю любой записи
-    history = EditHistory.query.filter_by(record_id=record_id).order_by(EditHistory.edited_at.desc()).all()
-    return render_template('record_history.html', record=record, history=history)
+    # Получаем все изменения для этой записи
+    history = EditHistory.query.filter_by(record_id=record_id) \
+        .order_by(EditHistory.edited_at.desc()).all()
+
+    # Группируем изменения по времени (с точностью до секунды)
+    grouped = {}
+    for entry in history:
+        # Ключ - строка с датой-временем + пользователь
+        time_key = entry.edited_at.strftime('%Y-%m-%d %H:%M:%S')
+        user_key = entry.user_id
+        group_key = f"{time_key}_{user_key}"
+
+        if group_key not in grouped:
+            grouped[group_key] = {
+                'edited_at': entry.edited_at,
+                'user_name': entry.user.full_name or entry.user.username,
+                'user_id': entry.user_id,
+                'changes': []
+            }
+
+        # Формируем текст изменения
+        field_names = {
+            'last_name': 'Фамилия',
+            'first_name': 'Имя',
+            'middle_name': 'Отчество',
+            'birth_date': 'Дата рождения',
+            'date2': 'Дата 2',
+            'place2': 'Место 2',
+            'category': 'Категория',
+            'category_custom': 'Свой вариант',
+            'position': 'Должность',
+            'rank': 'Звание',
+            'number': 'Номер',
+            'lp': 'ЛП',
+            'lp_reason': 'Причина ЛП',
+            'place': 'Место',
+            'ppr': 'ППР',
+            'place2_field': 'Место 2',
+            'date4': 'Дата 4',
+            'ee': 'ЭЭ',
+            'ee4': 'ЭЭ4'
+        }
+
+        field_rus = field_names.get(entry.field_name, entry.field_name)
+        old_val = entry.old_value if entry.old_value else 'пусто'
+        new_val = entry.new_value if entry.new_value else 'пусто'
+
+        grouped[group_key]['changes'].append({
+            'field': field_rus,
+            'old': old_val,
+            'new': new_val,
+            'display': f"{field_rus}: {old_val} → {new_val}",
+            'short': f"{field_rus}: {old_val} → {new_val}"[:50]
+        })
+
+    # Преобразуем в список для шаблона
+    grouped_history = []
+    for group in grouped.values():
+        grouped_history.append(group)
+
+    # Сортируем по дате (сначала новые)
+    grouped_history.sort(key=lambda x: x['edited_at'], reverse=True)
+
+    return render_template('record_history.html',
+                           record=record,
+                           grouped_history=grouped_history)
 
 @app.route('/users')
 @login_required
