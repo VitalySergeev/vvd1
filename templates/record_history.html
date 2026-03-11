@@ -1,87 +1,300 @@
 {% extends "base.html" %}
 {% block title %}История изменений записи #{{ record.id }}{% endblock %}
 
+{% block extra_head %}
+<style>
+    .change-cell {
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    .change-cell:hover {
+        background-color: #f0f0f0;
+    }
+    .badge {
+        font-size: 0.9em;
+        padding: 5px 10px;
+        display: inline-block;
+        background-color: #17a2b8;
+        color: white;
+        border-radius: 4px;
+    }
+    .change-summary {
+        color: #666;
+        font-size: 0.95em;
+    }
+    /* Стили для модального окна */
+    #customModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+    .modal-content {
+        position: relative;
+        width: 80%;
+        max-width: 800px;
+        margin: 50px auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+        background: #007bff;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .modal-body {
+        padding: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+    .modal-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        text-align: right;
+        background: white;
+        border-radius: 0 0 8px 8px;
+    }
+    .change-item {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .field-name {
+        color: #0066cc;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .old-value {
+        color: #dc3545;
+        text-decoration: line-through;
+        background-color: #ffe6e6;
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+    .new-value {
+        color: #28a745;
+        font-weight: bold;
+        background-color: #e6ffe6;
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .arrow {
+        color: #666;
+        font-size: 18px;
+        margin: 0 5px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <h2 class="mb-4">📜 История изменений записи #{{ record.id }}</h2>
 
+    <!-- Краткая информация о записи -->
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Текущие данные записи</h5>
+            <h5 class="mb-0">Запись: {{ record.last_name }} {{ record.first_name }} {{ record.middle_name }}</h5>
         </div>
-        <div class="card-body">
-            <p><strong>ФИО:</strong> {{ record.last_name }} {{ record.first_name }} {{ record.middle_name }}</p>
-            <p><strong>Дата рождения:</strong> {{ record.birth_date.strftime('%d.%m.%Y') if record.birth_date else '-' }}</p>
-            <p><strong>Категория:</strong> {{ record.category or '-' }} {{ '(' + record.category_custom + ')' if record.category_custom }}</p>
-            <p><strong>Создано:</strong> {{ record.created_at.strftime('%d.%m.%Y %H:%M') }} ({{ record.author.full_name or record.author.username }})</p>
-            <p><strong>Последнее изменение:</strong> {{ record.updated_at.strftime('%d.%m.%Y %H:%M') if record.updated_at else 'нет' }}</p>
+        <div class="card-body py-2">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">Дата рождения: {{ record.birth_date.strftime('%d.%m.%Y') if record.birth_date else '-' }}</small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">Создано: {{ record.created_at.strftime('%d.%m.%Y %H:%M') }} ({{ record.author.full_name or record.author.username }})</small>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- История изменений с группировкой по коммитам -->
     <div class="card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Журнал изменений ({{ history|length }})</h5>
+            <h5 class="mb-0">Журнал изменений</h5>
             <div>
                 <a href="{{ url_for('edit_record', record_id=record.id) }}" class="btn btn-warning btn-sm">✏️ Редактировать</a>
                 <a href="{{ url_for('all_records') }}" class="btn btn-light btn-sm">↩️ К списку</a>
             </div>
         </div>
         <div class="card-body">
-            {% if history %}
+            {% if grouped_history %}
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
                         <tr>
-                            <th>Дата/время</th>
-                            <th>Пользователь</th>
-                            <th>Поле</th>
-                            <th>Было</th>
-                            <th>Стало</th>
+                            <th style="width: 180px;">Дата и время</th>
+                            <th style="width: 150px;">Пользователь</th>
+                            <th>Измененные поля</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for entry in history %}
+                        {% for group in grouped_history %}
                         <tr>
-                            <td>{{ entry.edited_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
-                            <td>{{ entry.user.full_name or entry.user.username }}</td>
+                            <td>{{ group.edited_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                            <td>{{ group.user_name }}</td>
                             <td>
-                                <strong>
-                                {% if entry.field_name == 'last_name' %}Фамилия
-                                {% elif entry.field_name == 'first_name' %}Имя
-                                {% elif entry.field_name == 'middle_name' %}Отчество
-                                {% elif entry.field_name == 'birth_date' %}Дата рождения
-                                {% elif entry.field_name == 'date2' %}Дата 2
-                                {% elif entry.field_name == 'place2' %}Место 2
-                                {% elif entry.field_name == 'category' %}Категория
-                                {% elif entry.field_name == 'category_custom' %}Свой вариант
-                                {% elif entry.field_name == 'position' %}Должность
-                                {% elif entry.field_name == 'rank' %}Звание
-                                {% elif entry.field_name == 'number' %}Номер
-                                {% elif entry.field_name == 'lp' %}ЛП
-                                {% elif entry.field_name == 'lp_reason' %}Причина ЛП
-                                {% elif entry.field_name == 'place' %}Место
-                                {% elif entry.field_name == 'ppr' %}ППР
-                                {% elif entry.field_name == 'place2_field' %}Место 2
-                                {% elif entry.field_name == 'date4' %}Дата 4
-                                {% elif entry.field_name == 'ee' %}ЭЭ
-                                {% elif entry.field_name == 'ee4' %}ЭЭ4
-                                {% else %}{{ entry.field_name }}
-                                {% endif %}
-                                </strong>
+                                <div class="change-cell" data-changes='{{ group.changes|tojson|safe }}'>
+                                    {% if group.changes|length == 1 %}
+                                        {{ group.changes[0].display }}
+                                    {% else %}
+                                        <span class="badge" style="background-color: #17a2b8; color: #000000; font-weight: bold;">{{ group.changes|length }} изм.</span>
+                                        <span class="change-summary">{{ group.changes[0].short }}...</span>
+                                    {% endif %}
+                                </div>
                             </td>
-                            <td class="text-muted">{{ entry.old_value or '<пусто>' }}</td>
-                            <td class="text-success">{{ entry.new_value or '<пусто>' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <div class="alert alert-info">
+            <div class="alert alert-info mb-0">
                 У этой записи пока нет истории изменений.
             </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Модальное окно -->
+<div id="customModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999;">
+    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 800px; max-height: 80vh; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+        <!-- Заголовок -->
+        <div style="background: #007bff; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="margin: 0; font-size: 18px;">Детали изменений</h5>
+            <button onclick="closeModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        <!-- Тело модального окна с прокруткой -->
+        <div id="customModalBody" style="padding: 20px; overflow-y: auto; max-height: 60vh; background: #f8f9fa;">
+            <!-- Сюда будет вставлен контент -->
+        </div>
+        <!-- Футер -->
+        <div style="padding: 15px 20px; border-top: 1px solid #dee2e6; text-align: right; background: white; border-radius: 0 0 8px 8px;">
+            <button onclick="closeModal()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для открытия модального окна
+function showChanges(changes) {
+    console.log('Показываем изменения:', changes);
+
+    var modalBody = document.getElementById('customModalBody');
+    if (!modalBody) {
+        console.error('Модальное окно не найдено');
+        return;
+    }
+
+    var html = '';
+
+    for (var i = 0; i < changes.length; i++) {
+        var change = changes[i];
+        html += '<div style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">';
+        html += '<div style="margin-bottom: 8px;">';
+        html += '<strong style="color: #0066cc; font-size: 15px;">📌 ' + change.field + ':</strong>';
+        html += '</div>';
+        html += '<div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">';
+        html += '<span style="color: #dc3545; text-decoration: line-through; background-color: #ffe6e6; padding: 4px 10px; border-radius: 4px; font-size: 13px;">' + (change.old || 'пусто') + '</span>';
+        html += '<span style="color: #666; font-size: 16px;">→</span>';
+        html += '<span style="color: #28a745; font-weight: bold; background-color: #e6ffe6; padding: 4px 10px; border-radius: 4px; font-size: 13px;">' + (change.new || 'пусто') + '</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+
+    modalBody.innerHTML = html;
+
+    // Показываем модальное окно
+    var modal = document.getElementById('customModal');
+    modal.style.display = 'block';
+
+    // Блокируем прокрутку основной страницы
+    document.body.style.overflow = 'hidden';
+}
+
+// Функция для закрытия модального окна
+function closeModal() {
+    var modal = document.getElementById('customModal');
+    modal.style.display = 'none';
+
+    // Возвращаем прокрутку основной страницы
+    document.body.style.overflow = 'auto';
+}
+
+// Закрытие по клику на фон (на серый фон, а не на само окно)
+document.getElementById('customModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Закрытие по клавише Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var modal = document.getElementById('customModal');
+        if (modal.style.display === 'block') {
+            closeModal();
+        }
+    }
+});
+
+// Назначаем обработчики клика на ячейки
+document.addEventListener('DOMContentLoaded', function() {
+    var cells = document.querySelectorAll('.change-cell');
+    console.log('Найдено ячеек для истории:', cells.length);
+
+    cells.forEach(function(cell, index) {
+        cell.addEventListener('click', function() {
+            var changesData = this.getAttribute('data-changes');
+            console.log('Клик по ячейке', index, 'данные:', changesData);
+
+            if (changesData) {
+                try {
+                    var changes = JSON.parse(changesData);
+                    showChanges(changes);
+                } catch (e) {
+                    console.error('Ошибка парсинга JSON:', e);
+                    alert('Ошибка при загрузке данных');
+                }
+            }
+        });
+
+        // Добавляем стиль курсора для наглядности
+        cell.style.cursor = 'pointer';
+    });
+});
+</script>
 {% endblock %}

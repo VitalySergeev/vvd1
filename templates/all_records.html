@@ -4,7 +4,47 @@
 {% block content %}
 <div class="container-fluid">
     <h2 class="mb-4">📋 Все записи в базе данных</h2>
-    
+
+    <!-- СТАТИСТИКА -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                <span>📊 <strong>Всего записей в базе данных:</strong></span>
+                <span class="badge bg-primary rounded-pill fs-4">{{ total_all_records }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ФОРМА ПОИСКА -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">🔍 Поиск записей</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{{ url_for('all_records') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search_last_name" class="form-label">Фамилия</label>
+                    <input type="text" class="form-control" id="search_last_name" name="search_last_name" value="{{ search_last_name }}" placeholder="Введите фамилию">
+                </div>
+                <div class="col-md-3">
+                    <label for="search_user" class="form-label">Пользователь</label>
+                    <input type="text" class="form-control" id="search_user" name="search_user" value="{{ search_user }}" placeholder="Кто создал">
+                </div>
+                <div class="col-md-3">
+                    <label for="search_birth_date" class="form-label">Дата рождения</label>
+                    <input type="date" class="form-control" id="search_birth_date" name="search_birth_date" value="{{ search_birth_date }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">🔍 Найти</button>
+                        <a href="{{ url_for('all_records') }}" class="btn btn-secondary">❌ Сбросить</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ТАБЛИЦА С ЗАПИСЯМИ (без изменений) -->
     <div class="card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Список записей ({{ records|length }})</h5>
@@ -40,7 +80,6 @@
                             <td>{{ record.updated_at.strftime('%d.%m.%Y %H:%M') if record.updated_at else '-' }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <!-- Теперь кнопки видят все пользователи для всех записей -->
                                     <a href="{{ url_for('edit_record', record_id=record.id) }}" class="btn btn-warning">✏️ Ред</a>
                                     <a href="{{ url_for('record_history', record_id=record.id) }}" class="btn btn-info">📜 История</a>
                                 </div>
@@ -52,7 +91,11 @@
             </div>
             {% else %}
             <div class="alert alert-info">
+                {% if search_last_name or search_user or search_birth_date %}
+                По вашему запросу ничего не найдено. <a href="{{ url_for('all_records') }}">Сбросить поиск</a>
+                {% else %}
                 В базе данных пока нет записей. <a href="{{ url_for('input_data') }}">Добавить первую запись</a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
