@@ -15,7 +15,6 @@ class User(UserMixin, db.Model):
     full_name = db.Column(db.String(100))
     # Добавляем роль пользователя
     role = db.Column(db.String(20), default='user')
-    #entries = db.relationship('PersonData', backref='author', lazy=True)  # Изменено здесь!
 
     # Используем строку для отношения — это предотвращает проблемы с порядком загрузки
     entries = db.relationship('PersonData', backref='author', lazy=True, cascade='all, delete-orphan')
@@ -62,7 +61,33 @@ class PersonData(db.Model):  # Класс переименован!
 
     # Служебные поля
     created_at = db.Column(db.DateTime, default=datetime.now)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) #Алиса s
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # ИСПРАВЛЕНО: Убрана связь 'history_entries', оставлена только одна.
+    # Связь с историей изменений. backref='record' создаст обратную связь в EditHistory.
+    # Параметр 'cascade' гарантирует, что при удалении записи удалится и её история.
+    edit_history = db.relationship('EditHistory', backref='record', lazy='dynamic', cascade='all, delete-orphan')
+
+def __repr__(self):
+        return f'<PersonData {self.last_name} {self.first_name}>'
+
+
+class EditHistory(db.Model):
+    """История редактирования записей"""
+    __tablename__ = 'edit_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    record_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    field_name = db.Column(db.String(100), nullable=False)  # Какое поле изменили
+    old_value = db.Column(db.Text)  # Старое значение
+    new_value = db.Column(db.Text)  # Новое значение
+    edited_at = db.Column(db.DateTime, default=datetime.now)  # Когда изменили
+
+    # Связи для удобного доступа
+    # record = db.relationship('PersonData', backref='history_entries')
+    user = db.relationship('User', backref='edit_actions')
 
     def __repr__(self):
-        return f'<PersonData {self.last_name} {self.first_name}>'
+        return f'<EditHistory {self.record_id} {self.field_name} {self.edited_at}>'
