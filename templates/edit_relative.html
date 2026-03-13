@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}Редактирование родственника{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Стили для фиксированной панели */
+    .fixed-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 0 0 10px 10px;
+        box-sizing: border-box;
+    }
+    
+    .toolbar-container {
+        display: flex;
+        gap: 80px;
+        align-items: center;
+        justify-content: flex-start;
+        max-width: 1400px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+    }
+    
+    .toolbar-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-decoration: none;
+    }
+    
+    .toolbar-btn-save {
+        background: #28a745;
+        color: white;
+        border: 2px solid #28a745;
+    }
+    
+    .toolbar-btn-save:hover {
+        background: #218838;
+        border-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .toolbar-btn-delete {
+        background: #dc3545;
+        color: white;
+        border: 2px solid #dc3545;
+    }
+    
+    .toolbar-btn-delete:hover {
+        background: #c82333;
+        border-color: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    .toolbar-btn-close {
+        background: white;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+    }
+    
+    .toolbar-btn-close:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    /* Контейнер для основного контента */
+    .content-wrapper {
+        margin-top: 80px;
+        padding: 20px;
+    }
+    
+    /* Адаптивность для мобильных */
+    @media (max-width: 768px) {
+        .toolbar-container {
+            gap: 20px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .toolbar-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .content-wrapper {
+            margin-top: 200px;
+        }
+    }
+    
+    /* Стили для карточки */
+    .person-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Фиксированная панель с кнопками -->
+<div class="fixed-toolbar">
+    <div class="toolbar-container">
+        <button type="submit" form="editRelativeForm" class="toolbar-btn toolbar-btn-save">
+            💾 Сохранить
+        </button>
+        
+        <button type="button" class="toolbar-btn toolbar-btn-delete" onclick="confirmDelete()">
+            🗑️ Удалить
+        </button>
+        
+        <button type="button" class="toolbar-btn toolbar-btn-close" onclick="handleClose()">
+            ❌ Закрыть
+        </button>
+    </div>
+</div>
+
+<!-- Основной контент -->
+<div class="content-wrapper">
+    <!-- Карточка с основной записью -->
+    <div class="card person-card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">👤 Основная запись</h5>
+            <p class="card-text">
+                <strong>{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}</strong><br>
+                Дата рождения: {{ person.birth_date.strftime('%d.%m.%Y') if person.birth_date else '-' }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Форма редактирования родственника -->
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">✏️ Редактирование родственника</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="editRelativeForm">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="last_name" class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ relative.last_name or '' }}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="first_name" class="form-label">Имя</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ relative.first_name or '' }}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="middle_name" class="form-label">Отчество</label>
+                        <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ relative.middle_name or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="birth_date" class="form-label">Дата рождения</label>
+                        <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ relative.birth_date.strftime('%Y-%m-%d') if relative.birth_date else '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="phone" class="form-label">Телефон</label>
+                        <input type="text" class="form-control" id="phone" name="phone" value="{{ relative.phone or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="relation_degree" class="form-label">Степень родства</label>
+                        <select class="form-select" id="relation_degree" name="relation_degree">
+                            <option value="">-- Выберите --</option>
+                            <option value="Супруг(а)" {% if relative.relation_degree == 'Супруг(а)' %}selected{% endif %}>Супруг(а)</option>
+                            <option value="Сын" {% if relative.relation_degree == 'Сын' %}selected{% endif %}>Сын</option>
+                            <option value="Дочь" {% if relative.relation_degree == 'Дочь' %}selected{% endif %}>Дочь</option>
+                            <option value="Отец" {% if relative.relation_degree == 'Отец' %}selected{% endif %}>Отец</option>
+                            <option value="Мать" {% if relative.relation_degree == 'Мать' %}selected{% endif %}>Мать</option>
+                            <option value="Брат" {% if relative.relation_degree == 'Брат' %}selected{% endif %}>Брат</option>
+                            <option value="Сестра" {% if relative.relation_degree == 'Сестра' %}selected{% endif %}>Сестра</option>
+                            <option value="Другое" {% if relative.relation_degree == 'Другое' %}selected{% endif %}>Другое</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="size" class="form-label">Размер</label>
+                        <input type="text" class="form-control" id="size" name="size" value="{{ relative.size or '' }}" placeholder="Например: 42, M, L">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="registration_address" class="form-label">Адрес регистрации</label>
+                        <textarea class="form-control" id="registration_address" name="registration_address" rows="2">{{ relative.registration_address or '' }}</textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="actual_address" class="form-label">Адрес фактического проживания</label>
+                        <textarea class="form-control" id="actual_address" name="actual_address" rows="2">{{ relative.actual_address or '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="period_assignment" class="form-label">Период назначения</label>
+                        <input type="text" class="form-control" id="period_assignment" name="period_assignment" value="{{ relative.period_assignment or '' }}" placeholder="Например: 2024-2025, ежемесячно">
+                    </div>
+                </div>
+            </form>
+
+            <!-- Форма для удаления (скрытая) -->
+            <form id="deleteForm" method="post" action="{{ url_for('delete_relative', relative_id=relative.id) }}" style="display: none;">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для сбора текущих данных формы
+function getFormData() {
+    return {
+        last_name: document.getElementById('last_name').value,
+        first_name: document.getElementById('first_name').value,
+        middle_name: document.getElementById('middle_name').value,
+        birth_date: document.getElementById('birth_date').value,
+        phone: document.getElementById('phone').value,
+        relation_degree: document.getElementById('relation_degree').value,
+        size: document.getElementById('size').value,
+        registration_address: document.getElementById('registration_address').value,
+        actual_address: document.getElementById('actual_address').value,
+        period_assignment: document.getElementById('period_assignment').value
+    };
+}
+
+// Функция для сравнения данных
+function hasChanges() {
+    var formData = getFormData();
+
+    // Данные из БД (переданные из шаблона)
+    var originalData = {
+        last_name: '{{ relative.last_name or '' }}',
+        first_name: '{{ relative.first_name or '' }}',
+        middle_name: '{{ relative.middle_name or '' }}',
+        birth_date: '{{ relative.birth_date.strftime("%Y-%m-%d") if relative.birth_date else '' }}',
+        phone: '{{ relative.phone or '' }}',
+        relation_degree: '{{ relative.relation_degree or '' }}',
+        size: '{{ relative.size or '' }}',
+        registration_address: '{{ relative.registration_address or '' }}',
+        actual_address: '{{ relative.actual_address or '' }}',
+        period_assignment: '{{ relative.period_assignment or '' }}'
+    };
+
+    // Сравниваем каждое поле
+    for (var key in formData) {
+        if (formData[key] !== originalData[key]) {
+            console.log('Изменение в поле:', key, formData[key], originalData[key]);
+            return true;
+        }
+    }
+    return false;
+}
+
+// Обработчик для кнопки "Закрыть"
+function handleClose() {
+    // Проверяем, есть ли изменения
+    if (hasChanges()) {
+        // Если есть изменения - спрашиваем
+        var result = confirm('Сохранить измененные данные?');
+        if (result) {
+            // Да - сохраняем
+            document.getElementById('editRelativeForm').submit();
+        } else {
+            // Нет - просто закрываем
+            window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
+        }
+    } else {
+        // Если изменений нет - сразу закрываем без диалога
+        window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
+    }
+}
+
+// Функция для подтверждения удаления
+function confirmDelete() {
+    if (confirm('Вы уверены, что хотите удалить этого родственника?')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+
+// Добавляем поддержку клавиатуры (Enter в полях)
+document.addEventListener('DOMContentLoaded', function() {
+    var inputs = document.querySelectorAll('#editRelativeForm input, #editRelativeForm select, #editRelativeForm textarea');
+    inputs.forEach(function(input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Если нажат Enter в любом поле - ничего не делаем,
+                // чтобы не отправлять форму случайно
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, send_file
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_bootstrap import Bootstrap5  # Импортируем Bootstrap5
 import openpyxl
 from io import BytesIO
 import os
@@ -17,6 +18,10 @@ from models import User, PersonData, EditHistory, Relative  # Добавили R
 # Создаем приложение
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'запасной-ключ-только-для-разработки')
+
+# Настройки Bootstrap
+app.config['BOOTSTRAP_SERVE_LOCAL'] = True  # Загружать Bootstrap локально
+bootstrap = Bootstrap5(app)  # Инициализируем Bootstrap5
 
 # Создаем путь к папке database в той же директории, где находится app.py
 BASE_DIR = Path(__file__).parent
@@ -40,7 +45,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin():
-            flash('Доступ запрещен. Требуются права администратора.')
+            flash('Доступ запрещен. Требуются права администратора.','warning')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
@@ -99,7 +104,7 @@ def all_records():
             birth_date = datetime.strptime(search_birth_date, '%Y-%m-%d').date()
             query = query.filter(PersonData.birth_date == birth_date)
         except ValueError:
-            flash('Неверный формат даты рождения')
+            flash('Неверный формат даты рождения','warning')
 
     # Получаем отфильтрованные записи
     records = query.order_by(PersonData.created_at.desc()).all()
@@ -291,9 +296,16 @@ def edit_record(record_id):
             # Сохраняем историю изменений
             save_edit_history(record.id, current_user.id, changes)
 
-            flash(f'Запись #{record.id} успешно обновлена! Изменено полей: {len(changes)}')
+            #flash(f'Запись #{record.id} успешно обновлена! Изменено полей: {len(changes)}', 'success')
+            #мои правки
+            if request.form.get('redirect_to') == 'relatives':
+                #flash('Данные успешно сохранены!', 'success')
+                return redirect(url_for('manage_relatives', person_id=record.id))
         else:
-            flash('Нет изменений для сохранения')
+            # Мое изменение в случае Нет проверяем, куда редиректить
+            if request.form.get('redirect_to') == 'relatives':
+                return redirect(url_for('manage_relatives', person_id=record.id))
+            #flash('Нет изменений для сохранения', 'success')
 
         return redirect(url_for('all_records'))
 
@@ -405,7 +417,7 @@ def user_create():
 
         # Проверяем, существует ли уже такой пользователь
         if User.query.filter_by(username=username).first():
-            flash(f'Пользователь с именем {username} уже существует!')
+            flash(f'Пользователь с именем {username} уже существует!', 'success')
             return redirect(url_for('user_create'))
 
         # Создаем нового пользователя
@@ -417,7 +429,7 @@ def user_create():
         )
         db.session.add(new_user)
         db.session.commit()
-        flash(f'Пользователь {username} успешно создан!')
+        flash(f'Пользователь {username} успешно создан!', 'success')
         return redirect(url_for('user_list'))
 
     return render_template('user_create.html')
@@ -431,7 +443,7 @@ def user_edit(user_id):
 
     # Не даем админу редактировать самого себя (чтобы случайно не лишить прав)
     if user.id == current_user.id:
-        flash('Вы не можете редактировать свою учетную запись через эту страницу.')
+        flash('Вы не можете редактировать свою учетную запись через эту страницу.', 'warning')
         return redirect(url_for('user_list'))
 
     if request.method == 'POST':
@@ -444,7 +456,7 @@ def user_edit(user_id):
             user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
 
         db.session.commit()
-        flash(f'Пользователь {user.username} обновлен!')
+        flash(f'Пользователь {user.username} обновлен!', 'success')
         return redirect(url_for('user_list'))
 
     return render_template('user_edit.html', user=user)
@@ -459,18 +471,18 @@ def user_delete(user_id):
 
     # Не даем удалить самого себя
     if user.id == current_user.id:
-        flash('Вы не можете удалить свою учетную запись!')
+        flash('Вы не можете удалить свою учетную запись!', 'success')
         return redirect(url_for('user_list'))
 
     # Не даем удалить последнего админа
     admin_count = User.query.filter_by(role='admin').count()
     if user.role == 'admin' and admin_count <= 1:
-        flash('Нельзя удалить последнего администратора!')
+        flash('Нельзя удалить последнего администратора!', 'success')
         return redirect(url_for('user_list'))
 
     db.session.delete(user)
     db.session.commit()
-    flash(f'Пользователь {user.username} удален!')
+    flash(f'Пользователь {user.username} удален!', 'success')
     return redirect(url_for('user_list'))
 
 # --- СМЕНА ПАРОЛЯ ДЛЯ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ ---
@@ -487,18 +499,18 @@ def change_password():
 
         # Проверяем старый пароль
         if not check_password_hash(current_user.password, old_password):
-            flash('Неверный текущий пароль!')
+            flash('Неверный текущий пароль!','error')
             return redirect(url_for('change_password'))
 
         # Проверяем, что новый пароль подтвержден
         if new_password != confirm_password:
-            flash('Новый пароль и подтверждение не совпадают!')
+            flash('Новый пароль и подтверждение не совпадают!','error')
             return redirect(url_for('change_password'))
 
         # Обновляем пароль
         current_user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
         db.session.commit()
-        flash('Пароль успешно изменен!')
+        flash('Пароль успешно изменен!','success')
         return redirect(url_for('dashboard'))
 
     return render_template('change_password.html')
@@ -525,7 +537,7 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
-            flash('Неверное имя пользователя или пароль')
+            flash('Неверное имя пользователя или пароль','error')
 
     return render_template('login.html')
 
@@ -600,8 +612,10 @@ def input_data():
 
         db.session.add(new_entry)
         db.session.commit()
-        flash('Данные успешно сохранены!')
-        return redirect(url_for('dashboard'))
+        #flash('Данные успешно сохранены!')
+        #return redirect(url_for('dashboard'))
+        flash('Данные успешно сохранены!','success')
+        return redirect(url_for('input_data'))  # Остаемся на той же странице
 
     return render_template('input_form.html')
 
@@ -640,7 +654,7 @@ def manage_relatives(person_id):
 
         db.session.add(relative)
         db.session.commit()
-        flash('Родственник добавлен!')
+        flash('Родственник добавлен!','success')
         return redirect(url_for('manage_relatives', person_id=person.id))
 
     # Получаем всех родственников для этой записи
@@ -648,16 +662,64 @@ def manage_relatives(person_id):
 
     return render_template('relatives.html', person=person, relatives=relatives)
 
-@app.route('/relative/delete/<int:relative_id>')
+@app.route('/relative/edit/<int:relative_id>', methods=['GET', 'POST'])
+@login_required
+def edit_relative(relative_id):
+    """Редактирование конкретного родственника"""
+    relative = Relative.query.get_or_404(relative_id)
+    person = relative.main_person
+
+    if request.method == 'POST':
+        # Функция для получения даты
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # Обновляем данные родственника
+        relative.last_name = request.form.get('last_name')
+        relative.first_name = request.form.get('first_name')
+        relative.middle_name = request.form.get('middle_name')
+        relative.birth_date = get_date('birth_date')
+        relative.registration_address = request.form.get('registration_address')
+        relative.actual_address = request.form.get('actual_address')
+        relative.phone = request.form.get('phone')
+        relative.relation_degree = request.form.get('relation_degree')
+        relative.size = request.form.get('size')
+        relative.period_assignment = request.form.get('period_assignment')
+
+        db.session.commit()
+        flash('Данные родственника обновлены!', 'success')
+        return redirect(url_for('manage_relatives', person_id=person.id))
+
+    return render_template('edit_relative.html', relative=relative, person=person)
+
+@app.route('/relative/delete/<int:relative_id>', methods=['POST'])
 @login_required
 def delete_relative(relative_id):
     """Удаление родственника"""
     relative = Relative.query.get_or_404(relative_id)
     person_id = relative.person_data_id
+
     db.session.delete(relative)
     db.session.commit()
-    flash('Родственник удален!')
+    flash('Родственник удален!', 'success')
     return redirect(url_for('manage_relatives', person_id=person_id))
+
+# @app.route('/relative/delete/<int:relative_id>')
+# @login_required
+# def delete_relative(relative_id):
+#     """Удаление родственника"""
+#     relative = Relative.query.get_or_404(relative_id)
+#     person_id = relative.person_data_id
+#     db.session.delete(relative)
+#     db.session.commit()
+#     flash('Родственник удален!','success')
+#     return redirect(url_for('manage_relatives', person_id=person_id))
 
 # @app.route('/report/simple')
 # @login_required
@@ -815,7 +877,7 @@ def report_r2026():
 @login_required
 def report_t392():
     """Отчет Т-392 (заглушка)"""
-    flash('Отчет Т-392 находится в разработке')
+    flash('Отчет Т-392 находится в разработке','warning')
     return redirect(url_for('dashboard'))
 
 
@@ -823,28 +885,28 @@ def report_t392():
 @login_required
 def report_otchet66():
     """Отчет 66 (заглушка)"""
-    flash('Отчет 66 находится в разработке')
+    flash('Отчет 66 находится в разработке','warning')
     return redirect(url_for('dashboard'))
 
 @app.route('/report/form')
 @login_required
 def report_form():
     """Отчет Форма (заглушка)"""
-    flash('Отчет Форма находится в разработке')
+    flash('Отчет Форма находится в разработке','warning')
     return redirect(url_for('dashboard'))
 
 @app.route('/report/flag')
 @login_required
 def report_flag():
     """Отчет Флаг (заглушка)"""
-    flash('Отчет Флаг находится в разработке')
+    flash('Отчет Флаг находится в разработке','warning')
     return redirect(url_for('dashboard'))
 
 @app.route('/report/zayavka')
 @login_required
 def report_zayavka():
     """Отчет Заявка (заглушка)"""
-    flash('Отчет Заявка находится в разработке')
+    flash('Отчет Заявка находится в разработке','warning')
     return redirect(url_for('dashboard'))
 
 # ЕДИНСТВЕННЫЙ БЛОК В КОНЦЕ ФАЙЛА (замени то, что сейчас в строках 318-341)

@@ -1,13 +1,159 @@
 {% extends "base.html" %}
 {% block title %}Редактирование записи #{{ record.id }}{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">✏️ Редактирование записи #{{ record.id }}</h2>
+{% block extra_head %}
+<style>
+    /* Стили для фиксированной панели (такие же как в input_form) */
+    .fixed-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 0 0 10px 10px;
+        box-sizing: border-box;
+    }
 
+    .toolbar-container {
+        display: flex;
+        gap: 80px;
+        align-items: center;
+        justify-content: flex-start;
+        max-width: 1400px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-decoration: none;
+    }
+
+    .toolbar-btn-save {
+        background: #28a745;
+        color: white;
+        border: 2px solid #28a745;
+    }
+
+    .toolbar-btn-save:hover {
+        background: #218838;
+        border-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .toolbar-btn-close {
+        background: white;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+    }
+
+    .toolbar-btn-close:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .toolbar-btn-relatives {
+        background: #17a2b8;
+        color: white;
+        border: 2px solid #17a2b8;
+    }
+
+    .toolbar-btn-relatives:hover {
+        background: #138496;
+        border-color: #138496;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+    }
+
+    .toolbar-btn-history {
+        background: #ffc107;
+        color: #000;
+        border: 2px solid #ffc107;
+    }
+
+    .toolbar-btn-history:hover {
+        background: #e0a800;
+        border-color: #e0a800;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    /* Контейнер для основного контента с отступом под панель */
+    .content-wrapper {
+        margin-top: 80px;
+        padding: 20px;
+    }
+
+    /* Адаптивность для мобильных */
+    @media (max-width: 768px) {
+        .toolbar-container {
+            gap: 20px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .toolbar-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .content-wrapper {
+            margin-top: 220px; /* Больше отступ для мобильных из-за нескольких кнопок */
+        }
+    }
+
+    /* Скрываем заголовок если он есть */
+    h2 {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Фиксированная панель с кнопками -->
+<div class="fixed-toolbar">
+    <div class="toolbar-container">
+        <button type="submit" form="editForm" class="toolbar-btn toolbar-btn-save">
+            💾 Сохранить
+        </button>
+
+        <button type="button" class="toolbar-btn toolbar-btn-relatives" onclick="handleRelatives()">
+            👨‍👩‍👧‍👦 Родственники
+        </button>
+
+        <!-- Кнопка истории только для администратора -->
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('record_history', record_id=record.id) }}" class="toolbar-btn toolbar-btn-history">
+            📜 История
+        </a>
+        {% endif %}
+
+        <button type="button" class="toolbar-btn toolbar-btn-close" onclick="handleClose()">
+            ❌ Закрыть
+        </button>
+    </div>
+</div>
+<!-- Основной контент -->
+<div class="content-wrapper">
     <div class="card">
         <div class="card-header bg-warning">
-            <h5 class="mb-0">Редактирование данных</h5>
+            <h5 class="mb-0">Редактирование записи #{{ record.id }}</h5>
         </div>
         <div class="card-body">
             <form method="post" id="editForm">
@@ -173,16 +319,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Кнопки -->
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="submit" class="btn btn-warning btn-lg">💾 Сохранить изменения</button>
-                    <a href="{{ url_for('all_records') }}" class="btn btn-secondary btn-lg">↩️ Отмена</a>
-                </div>
-                <!-- После формы редактирования -->
-                <div class="mt-3">
-                    <a href="{{ url_for('manage_relatives', person_id=record.id) }}" class="btn btn-success btn-lg">👨‍👩‍👧‍👦 Управление родственниками</a>
-                </div>
             </form>
         </div>
     </div>
@@ -200,6 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === '7') {
                 customDiv.style.display = 'block';
                 customInput.required = true;
+                customInput.focus();
             } else {
                 customDiv.style.display = 'none';
                 customInput.required = false;
@@ -218,6 +355,157 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+</script>
+<script>
+// Функция для сбора текущих данных формы
+function getFormData() {
+    return {
+        last_name: document.getElementById('last_name').value,
+        first_name: document.getElementById('first_name').value,
+        middle_name: document.getElementById('middle_name').value,
+        birth_date: document.getElementById('birth_date').value,
+        date2: document.getElementById('date2').value,
+        place2: document.getElementById('place2').value,
+        category: document.getElementById('category').value,
+        category_custom: document.getElementById('category_custom').value,
+        position: document.getElementById('position').value,
+        rank: document.getElementById('rank').value,
+        number: document.getElementById('number').value,
+        lp: document.getElementById('lp').value,
+        lp_reason: document.getElementById('lp_reason').value,
+        place: document.getElementById('place').value,
+        ppr: document.getElementById('ppr').value,
+        place2_field: document.getElementById('place2_field').value,
+        date4: document.getElementById('date4').value,
+        ee: document.getElementById('ee').value,
+        ee4: document.getElementById('ee4').value
+    };
+}
+
+// Сохраняем оригинальные данные при загрузке страницы
+var originalFormData = getFormData();
+console.log('Оригинальные данные:', originalFormData);
+
+// Функция для проверки изменений
+function hasChanges() {
+    var currentData = getFormData();
+
+    // Сравниваем каждое поле
+    for (var key in originalFormData) {
+        if (currentData[key] !== originalFormData[key]) {
+            console.log('Найдено изменение в поле:', key, 'было:', originalFormData[key], 'стало:', currentData[key]);
+            return true;
+        }
+    }
+    console.log('Изменений нет');
+    return false;
+}
+
+// Обработчик для кнопки "Закрыть"
+function handleClose() {
+    console.log('Проверка перед закрытием...');
+
+    if (hasChanges()) {
+        console.log('Есть изменения, показываем диалог');
+        var result = confirm('Сохранить измененные данные?');
+        if (result) {
+            console.log('Пользователь выбрал Да - сохраняем и закрываем');
+
+            // Добавляем скрытое поле для тихого сохранения
+            var form = document.getElementById('editForm');
+            var silentInput = document.createElement('input');
+            silentInput.type = 'hidden';
+            silentInput.name = 'silent_save';
+            silentInput.value = 'true';
+            form.appendChild(silentInput);
+
+            // Отправляем форму
+            form.submit();
+        } else {
+            console.log('Пользователь выбрал Нет - закрываем без сохранения');
+            window.location.href = "{{ url_for('all_records') }}";
+        }
+    } else {
+        console.log('Изменений нет - сразу закрываем');
+        window.location.href = "{{ url_for('all_records') }}";
+    }
+}
+
+// Обработчик для кнопки "Родственники"
+function handleRelatives() {
+    console.log('Проверка перед переходом к родственникам...');
+
+    if (hasChanges()) {
+        console.log('Есть изменения, показываем диалог');
+        var result = confirm('Сохранить измененные данные перед переходом к родственникам?');
+        if (result) {
+            console.log('Пользователь выбрал Да - сохраняем и переходим');
+
+            // Добавляем скрытое поле для редиректа
+            var form = document.getElementById('editForm');
+            var redirectInput = document.createElement('input');
+            redirectInput.type = 'hidden';
+            redirectInput.name = 'redirect_to';
+            redirectInput.value = 'relatives';
+            form.appendChild(redirectInput);
+
+            // Отправляем форму
+            form.submit();
+        } else {
+            console.log('Пользователь выбрал Нет - переходим без сохранения');
+            window.location.href = "{{ url_for('manage_relatives', person_id=record.id) }}";
+        }
+    } else {
+        console.log('Изменений нет - сразу переходим');
+        window.location.href = "{{ url_for('manage_relatives', person_id=record.id) }}";
+    }
+}
+
+// Логика для поля "Категория"
+document.addEventListener('DOMContentLoaded', function() {
+    var categorySelect = document.getElementById('category');
+    var customDiv = document.getElementById('customCategoryDiv');
+    var customInput = document.getElementById('category_custom');
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            if (this.value === '7') {
+                customDiv.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customDiv.style.display = 'none';
+                customInput.required = false;
+            }
+        });
+    }
+
+    // Валидация формы
+    var editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
+                e.preventDefault();
+                alert('Пожалуйста, введите свой вариант категории');
+                customInput.focus();
+            }
+        });
+    }
+});
+</script>
+<script>
+// Очистка данных при закрытии страницы
+window.addEventListener('beforeunload', function() {
+    // Очищаем сохраненные данные
+    originalFormData = null;
+    console.log('Данные очищены при закрытии страницы');
+});
+
+// Также очищаем при уходе со страницы через навигацию
+window.addEventListener('pagehide', function() {
+    originalFormData = null;
+    console.log('Данные очищены при навигации');
 });
 </script>
 {% endblock %}

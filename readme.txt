@@ -9,6 +9,14 @@
 # │   ├── login.html
 # │   ├── dashboard.html
 # │   └── input_form.html
-# └── static/                # Папка для картинок и стилей
+# ├── static/                # Папка для картинок и стилей
+# │   ├── css/
+# │   │   └── bootstrap.min.css
+# │   ├── js/
+# │   │   └── bootstrap.bundle.min.js
+# │   └── fonts/
+#
+#
+
 
 

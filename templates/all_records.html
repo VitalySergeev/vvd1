@@ -1,54 +1,195 @@
 {% extends "base.html" %}
 {% block title %}Все записи{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Стили для кликабельных строк */
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f0f8ff !important;  /* Светло-голубой при наведении */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .clickable-row td {
+        position: relative;
+    }
+
+    /* Убираем кнопки действий */
+    .btn-group {
+        display: none;
+    }
+
+    /* Адаптивность для мобильных */
+    @media (max-width: 768px) {
+        .table td, .table th {
+            white-space: nowrap;
+        }
+
+        .alert {
+            flex-direction: column;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .badge.fs-4 {
+            font-size: 1.5rem !important;
+        }
+    }
+
+    /* Стили для строки статистики */
+    .stats-row {
+        margin-bottom: 20px;
+    }
+
+    /* Улучшаем читаемость таблицы */
+    .table {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .table thead th {
+        background-color: #343a40;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-    <h2 class="mb-4">📋 Все записи в базе данных</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">📋 Все записи в базе данных</h2>
+        <a href="{{ url_for('input_data') }}" class="btn btn-success btn-lg">
+            ✏️ Ввод данных
+        </a>
+    </div>
 
     <!-- СТАТИСТИКА -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
-                <span>📊 <strong>Всего записей в базе данных:</strong></span>
-                <span class="badge bg-primary rounded-pill fs-4">{{ total_all_records }}</span>
-            </div>
+    <div class="stats-row">
+        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+            <span>📊 <strong>Всего записей в базе данных:</strong></span>
+            <span class="badge bg-primary rounded-pill fs-4">{{ total_all_records }}</span>
         </div>
     </div>
 
-    <!-- ФОРМА ПОИСКА -->
+    <!-- ФОРМА ПОИСКА (сворачиваемая) -->
     <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">🔍 Поиск записей</h5>
+        <div class="card-header bg-primary text-white" style="cursor: pointer;" onclick="toggleSearch()">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span>🔍 Поиск записей</span>
+                <span id="searchToggleIcon">▼</span>
+            </h5>
         </div>
-        <div class="card-body">
-            <form method="get" action="{{ url_for('all_records') }}" class="row g-3">
+        <div class="card-body" id="searchForm" style="display: none;">
+            <form method="get" action="{{ url_for('all_records') }}" class="row g-3" id="searchFormElement">
                 <div class="col-md-3">
                     <label for="search_last_name" class="form-label">Фамилия</label>
-                    <input type="text" class="form-control" id="search_last_name" name="search_last_name" value="{{ search_last_name }}" placeholder="Введите фамилию">
+                    <input type="text" class="form-control" id="search_last_name" name="search_last_name" value="{{ search_last_name }}" placeholder="Введите фамилию" onkeypress="handleKeyPress(event)">
                 </div>
                 <div class="col-md-3">
                     <label for="search_user" class="form-label">Пользователь</label>
-                    <input type="text" class="form-control" id="search_user" name="search_user" value="{{ search_user }}" placeholder="Кто создал">
+                    <input type="text" class="form-control" id="search_user" name="search_user" value="{{ search_user }}" placeholder="Кто создал" onkeypress="handleKeyPress(event)">
                 </div>
                 <div class="col-md-3">
                     <label for="search_birth_date" class="form-label">Дата рождения</label>
-                    <input type="date" class="form-control" id="search_birth_date" name="search_birth_date" value="{{ search_birth_date }}">
+                    <input type="date" class="form-control" id="search_birth_date" name="search_birth_date" value="{{ search_birth_date }}" onkeypress="handleKeyPress(event)">
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <div class="btn-group w-100">
-                        <button type="submit" class="btn btn-primary">🔍 Найти</button>
-                        <a href="{{ url_for('all_records') }}" class="btn btn-secondary">❌ Сбросить</a>
-                    </div>
+                    <button type="button" class="btn btn-primary me-2" onclick="validateAndSubmit()" style="flex: 1;">🔍 Найти</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetSearch()" style="flex: 1;">❌ Сбросить</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ТАБЛИЦА С ЗАПИСЯМИ (без изменений) -->
+    <script>
+    function toggleSearch() {
+        var searchForm = document.getElementById('searchForm');
+        var icon = document.getElementById('searchToggleIcon');
+
+        if (searchForm.style.display === 'none' || searchForm.style.display === '') {
+            searchForm.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            searchForm.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+
+    function handleKeyPress(event) {
+        // Если нажата клавиша Enter
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Предотвращаем стандартное поведение формы
+            validateAndSubmit();
+        }
+    }
+
+    function validateAndSubmit() {
+        var lastName = document.getElementById('search_last_name').value.trim();
+        var user = document.getElementById('search_user').value.trim();
+        var birthDate = document.getElementById('search_birth_date').value;
+
+        // Проверяем, заполнено ли хотя бы одно поле
+        if (!lastName && !user && !birthDate) {
+            // Показываем всплывающее сообщение справа вверху
+            showToast('⚠️ Введите данные для поиска', 'warning');
+            return; // Не отправляем форму
+        }
+
+        // Если хотя бы одно поле заполнено, отправляем форму
+        document.getElementById('searchFormElement').submit();
+    }
+
+    function resetSearch() {
+        // Перенаправляем на страницу без параметров поиска
+        window.location.href = "{{ url_for('all_records') }}";
+    }
+
+    function showToast(message, type) {
+        var toast = document.createElement('div');
+        toast.className = 'toast-notification toast-' + type;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">${type === 'warning' ? '⚠️' : '✅'}</span>
+                <span class="toast-message">${message}</span>
+            </div>
+            <div class="toast-progress"></div>
+        `;
+        document.body.appendChild(toast);
+
+        // Автоматически удаляем через 3 секунды
+        setTimeout(function() {
+            toast.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(function() {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // Если есть активные параметры поиска - показываем форму сразу
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchLast = '{{ search_last_name }}';
+        var searchUser = '{{ search_user }}';
+        var searchDate = '{{ search_birth_date }}';
+
+        if (searchLast || searchUser || searchDate) {
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('searchToggleIcon').textContent = '▲';
+        }
+    });
+    </script>
+
+    <!-- ТАБЛИЦА С ЗАПИСЯМИ -->
     <div class="card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Список записей ({{ records|length }})</h5>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-sm">↩️ На дашборд</a>
         </div>
         <div class="card-body">
             {% if records %}
@@ -64,12 +205,11 @@
                             <th>Автор</th>
                             <th>Создано</th>
                             <th>Изменено</th>
-                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for record in records %}
-                        <tr>
+                        <tr class="clickable-row" onclick="window.location='{{ url_for('edit_record', record_id=record.id) }}'">
                             <td>{{ record.id }}</td>
                             <td>{{ record.last_name }} {{ record.first_name }} {{ record.middle_name }}</td>
                             <td>{{ record.birth_date.strftime('%d.%m.%Y') if record.birth_date else '-' }}</td>
@@ -78,13 +218,6 @@
                             <td>{{ record.author.full_name or record.author.username }}</td>
                             <td>{{ record.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                             <td>{{ record.updated_at.strftime('%d.%m.%Y %H:%M') if record.updated_at else '-' }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('edit_record', record_id=record.id) }}" class="btn btn-warning">✏️ Ред</a>
-                                    <a href="{{ url_for('record_history', record_id=record.id) }}" class="btn btn-info">📜 История</a>
-                                    <a href="{{ url_for('manage_relatives', person_id=record.id) }}" class="btn btn-success">👨‍👩‍👧‍👦 Родств</a>
-                                </div>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -102,4 +235,43 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleSearch() {
+    var searchForm = document.getElementById('searchForm');
+    var icon = document.getElementById('searchToggleIcon');
+
+    if (searchForm.style.display === 'none') {
+        searchForm.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        searchForm.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Если есть активные параметры поиска - показываем форму сразу
+document.addEventListener('DOMContentLoaded', function() {
+    var searchLast = '{{ search_last_name }}';
+    var searchUser = '{{ search_user }}';
+    var searchDate = '{{ search_birth_date }}';
+
+    if (searchLast || searchUser || searchDate) {
+        document.getElementById('searchForm').style.display = 'block';
+        document.getElementById('searchToggleIcon').textContent = '▲';
+    }
+
+    // Добавляем поддержку клавиатуры для доступности
+    var rows = document.querySelectorAll('.clickable-row');
+    rows.forEach(function(row) {
+        row.setAttribute('tabindex', '0');
+        row.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
