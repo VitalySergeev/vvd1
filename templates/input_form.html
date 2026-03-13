@@ -3,24 +3,116 @@
 
 {% block extra_head %}
 <style>
-/* Дополнительные стили для красоты */
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-.card-header {
-    font-weight: bold;
-}
-.form-label {
-    font-weight: 500;
-}
+    /* Глобальные стили для фиксированной панели */
+    .global-fixed-toolbar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 99999 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 20px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+        border-radius: 0 0 10px 10px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    .global-toolbar-container {
+        display: flex !important;
+        gap: 80px !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+    }
+
+    .global-toolbar-btn {
+        padding: 12px 30px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+        text-decoration: none !important;
+    }
+
+    .global-toolbar-btn-save {
+        background: #28a745 !important;
+        color: white !important;
+        border: 2px solid #28a745 !important;
+    }
+
+    .global-toolbar-btn-save:hover {
+        background: #218838 !important;
+        border-color: #218838 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3) !important;
+    }
+
+    .global-toolbar-btn-close {
+        background: white !important;
+        color: #dc3545 !important;
+        border: 2px solid #dc3545 !important;
+    }
+
+    .global-toolbar-btn-close:hover {
+        background: #dc3545 !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3) !important;
+    }
+
+    /* Контейнер для контента с отступом */
+    .global-content-wrapper {
+        margin-top: 80px !important;
+        padding: 20px !important;
+    }
+
+    @media (max-width: 768px) {
+        .global-toolbar-container {
+            gap: 20px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .global-toolbar-btn {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+
+        .global-content-wrapper {
+            margin-top: 140px !important;
+        }
+    }
+
+    /* Скрываем заголовок */
+    h2 {
+        display: none !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">📝 Ввод общих данных</h2>
+<!-- Панель вне контейнеров -->
+<div class="global-fixed-toolbar">
+    <div class="global-toolbar-container">
+        <button type="submit" form="dataForm" class="global-toolbar-btn global-toolbar-btn-save">
+            💾 Сохранить
+        </button>
+        <a href="{{ url_for('all_records') }}" class="global-toolbar-btn global-toolbar-btn-close">
+            ❌ Закрыть
+        </a>
+    </div>
+</div>
 
+<!-- Контент с отступом -->
+<div class="global-content-wrapper">
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Форма ввода</h5>
@@ -50,7 +142,6 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="birth_date" class="form-label">Дата рождения</label>
-                                <!-- ИСПРАВЛЕНО: теперь type="date" вместо text + datepicker -->
                                 <input type="date" class="form-control" id="birth_date" name="birth_date">
                             </div>
                         </div>
@@ -66,7 +157,6 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="date2" class="form-label">Дата 2</label>
-                                <!-- ИСПРАВЛЕНО: type="date" -->
                                 <input type="date" class="form-control" id="date2" name="date2">
                             </div>
                             <div class="col-md-8 mb-3">
@@ -172,7 +262,7 @@
                     </div>
                 </div>
 
-                <!-- 7. Оставшиеся даты -->
+                <!-- 7. Остальные даты -->
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">📅 Остальные даты</h6>
@@ -181,46 +271,37 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="date4" class="form-label">Дата 4</label>
-                                <!-- ИСПРАВЛЕНО: type="date" -->
                                 <input type="date" class="form-control" id="date4" name="date4">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ee" class="form-label">ЭЭ</label>
-                                <!-- ИСПРАВЛЕНО: type="date" -->
                                 <input type="date" class="form-control" id="ee" name="ee">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ee4" class="form-label">ЭЭ4</label>
-                                <!-- ИСПРАВЛЕНО: type="date" -->
                                 <input type="date" class="form-control" id="ee4" name="ee4">
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Кнопки -->
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">💾 Сохранить данные</button>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">↩️ Вернуться</a>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Только логика для категории (Flatpickr полностью удалён) -->
 <script>
 // Логика для поля "Категория"
 document.addEventListener('DOMContentLoaded', function() {
     var categorySelect = document.getElementById('category');
     var customDiv = document.getElementById('customCategoryDiv');
     var customInput = document.getElementById('category_custom');
-    
+
     if (categorySelect) {
         categorySelect.addEventListener('change', function() {
             if (this.value === '7') {
                 customDiv.style.display = 'block';
                 customInput.required = true;
+                customInput.focus();
             } else {
                 customDiv.style.display = 'none';
                 customInput.required = false;

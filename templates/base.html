@@ -2,51 +2,181 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мое приложение - {% block title %}{% endblock %}</title>
-    <!-- Подключаем Bootstrap для красоты -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
+    <!-- Bootstrap CSS через Bootstrap-Flask -->
+    {{ bootstrap.load_css() }}
+
+    <title>{% block title %}Приложение ВВД{% endblock %}</title>
+
+    <!-- Дополнительные стили -->
+    {% block extra_head %}
+    <style>
+        /* Адаптивные настройки для мобильных устройств */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            .table-responsive {
+                font-size: 12px;
+            }
+        }
+
+        /* Стили для toast-уведомлений */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+            overflow: hidden;
+            border-left: 4px solid;
+        }
+
+        .toast-success { border-left-color: #28a745; }
+        .toast-error { border-left-color: #dc3545; }
+        .toast-warning { border-left-color: #ffc107; }
+        .toast-info { border-left-color: #17a2b8; }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            gap: 12px;
+        }
+
+        .toast-icon { font-size: 20px; }
+        .toast-message { flex: 1; font-size: 14px; color: #333; }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 100%;
+            animation: progress 5s linear forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+    {% endblock %}
 </head>
 <body>
+    <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Приложение ВВД</a>
-            <div class="collapse navbar-collapse">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">🏥 Приложение ВВД</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">🏠 Рабочий стол</a>
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">📊 Дашборд</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('input_data') }}">📝 Ввод данных</a>
-                        </li>
-                        {% if current_user.is_admin() %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('user_list') }}">👥 Пользователи</a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('change_password') }}">🔐 Сменить пароль</a>
+                            <a class="nav-link" href="{{ url_for('all_records') }}">📋 Все записи</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">🚪 Выход</a>
+                            <a class="nav-link" href="{{ url_for('logout') }}">🚪 Выйти ({{ current_user.full_name }})</a>
                         </li>
-                        {% endif %}
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">🔐 Вход</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <!-- Flash сообщения -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="toast-notification toast-{{ category or 'info' }}" id="toast-{{ loop.index }}">
+                    <div class="toast-content">
+                        {% if category == 'success' %}
+                            <span class="toast-icon">✅</span>
+                        {% elif category == 'error' %}
+                            <span class="toast-icon">❌</span>
+                        {% elif category == 'warning' %}
+                            <span class="toast-icon">⚠️</span>
+                        {% else %}
+                            <span class="toast-icon">ℹ️</span>
+                        {% endif %}
+                        <span class="toast-message">{{ message }}</span>
+                    </div>
+                    <div class="toast-progress"></div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
+    <!-- Основной контент -->
+    <main class="container-fluid mt-3">
         {% block content %}{% endblock %}
-    </div>
+    </main>
+
+    <!-- Bootstrap JS через Bootstrap-Flask (помещаем вниз для скорости загрузки) -->
+    {{ bootstrap.load_js() }}
+
+    <!-- Скрипты для уведомлений -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Автоматическое скрытие уведомлений через 5 секунд
+        const toasts = document.querySelectorAll('.toast-notification');
+
+        toasts.forEach(function(toast) {
+            setTimeout(function() {
+                toast.style.animation = 'slideOut 0.3s ease-out forwards';
+                setTimeout(function() {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            }, 5000);
+
+            // Закрытие по клику
+            toast.addEventListener('click', function() {
+                clearTimeout(toast.timeout);
+                toast.style.animation = 'slideOut 0.3s ease-out forwards';
+                setTimeout(function() {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            });
+        });
+    });
+    </script>
+
+    <!-- Дополнительные скрипты из дочерних шаблонов -->
+    {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -5,23 +5,9 @@
 <div class="container">
     <h2 class="mb-4">Добро пожаловать, {{ name }}!</h2>
 
-    <!-- ДВЕ ОСНОВНЫЕ КАРТОЧКИ: ВВОД И ОТЧЕТЫ -->
+    <!-- ТОЛЬКО ОТЧЕТЫ (6 кнопок) -->
     <div class="row">
-        <!-- Карточка для ввода данных -->
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">📝 Ввод данных</h5>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">Добавьте новую запись в базу данных.</p>
-                    <a href="{{ url_for('input_data') }}" class="btn btn-success btn-lg">✏️ Ввод данных</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Карточка для отчетов (6 кнопок) -->
-        <div class="col-md-6 mb-4">
+        <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">📊 Отчеты</h5>
@@ -59,7 +45,7 @@
         </div>
     </div>
 
-    <!-- БЛОК ДЛЯ АДМИНИСТРАТОРА (виден только админу) -->
+    <!-- БЛОК ДЛЯ АДМИНИСТРАТОРА -->
     {% if current_user.is_admin() %}
     <div class="row mt-4">
         <div class="col-12">
