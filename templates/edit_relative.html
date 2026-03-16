@@ -55,38 +55,52 @@
         box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
     }
     
+    /* НОВОЕ: Стили для кнопки истории */
+    .toolbar-btn-history {
+        background: #ffc107;
+        color: #000;
+        border: 2px solid #ffc107;
+    }
+
+    .toolbar-btn-history:hover {
+        background: #e0a800;
+        border-color: #e0a800;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+
     .toolbar-btn-delete {
         background: #dc3545;
         color: white;
         border: 2px solid #dc3545;
     }
-    
+
     .toolbar-btn-delete:hover {
         background: #c82333;
         border-color: #c82333;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
     }
-    
+
     .toolbar-btn-close {
         background: white;
         color: #dc3545;
         border: 2px solid #dc3545;
     }
-    
+
     .toolbar-btn-close:hover {
         background: #dc3545;
         color: white;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
     }
-    
+
     /* Контейнер для основного контента */
     .content-wrapper {
         margin-top: 80px;
         padding: 20px;
     }
-    
+
     /* Адаптивность для мобильных */
     @media (max-width: 768px) {
         .toolbar-container {
@@ -94,17 +108,17 @@
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .toolbar-btn {
             width: 100%;
             justify-content: center;
         }
-        
+
         .content-wrapper {
-            margin-top: 200px;
+            margin-top: 240px; /* Увеличил для 4 кнопок */
         }
     }
-    
+
     /* Стили для карточки */
     .person-card {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -121,11 +135,18 @@
         <button type="submit" form="editRelativeForm" class="toolbar-btn toolbar-btn-save">
             💾 Сохранить
         </button>
-        
+
+        <!-- НОВОЕ: Кнопка истории только для администратора -->
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('relative_history', relative_id=relative.id) }}" class="toolbar-btn toolbar-btn-history">
+            📜 История
+        </a>
+        {% endif %}
+
         <button type="button" class="toolbar-btn toolbar-btn-delete" onclick="confirmDelete()">
             🗑️ Удалить
         </button>
-        
+
         <button type="button" class="toolbar-btn toolbar-btn-close" onclick="handleClose()">
             ❌ Закрыть
         </button>
@@ -178,7 +199,7 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <label for="relation_degree" class="form-label">Степень родства</label>
-                        <select class="form-select" id="relation_degree" name="relation_degree">
+                        <select class="form-select" id="relation_degree" name="relation_degree" onchange="toggleOtherRelation()">
                             <option value="">-- Выберите --</option>
                             <option value="Супруг(а)" {% if relative.relation_degree == 'Супруг(а)' %}selected{% endif %}>Супруг(а)</option>
                             <option value="Сын" {% if relative.relation_degree == 'Сын' %}selected{% endif %}>Сын</option>
@@ -187,12 +208,12 @@
                             <option value="Мать" {% if relative.relation_degree == 'Мать' %}selected{% endif %}>Мать</option>
                             <option value="Брат" {% if relative.relation_degree == 'Брат' %}selected{% endif %}>Брат</option>
                             <option value="Сестра" {% if relative.relation_degree == 'Сестра' %}selected{% endif %}>Сестра</option>
-                            <option value="Другое" {% if relative.relation_degree == 'Другое' %}selected{% endif %}>Другое</option>
+                            <option value="other" {% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}selected{% endif %}>✏️ Другое (ввести)</option>
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="size" class="form-label">Размер</label>
-                        <input type="text" class="form-control" id="size" name="size" value="{{ relative.size or '' }}" placeholder="Например: 42, M, L">
+                    <div class="col-md-3 mb-3" id="other_relation_container" style="{% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}display: block;{% else %}display: none;{% endif %}">
+                        <label for="other_relation" class="form-label">Укажите степень родства</label>
+                        <input type="text" class="form-control" id="other_relation" name="other_relation" value="{% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}{{ relative.relation_degree }}{% endif %}" placeholder="Введите свой вариант">
                     </div>
                 </div>
 
@@ -213,6 +234,201 @@
                         <input type="text" class="form-control" id="period_assignment" name="period_assignment" value="{{ relative.period_assignment or '' }}" placeholder="Например: 2024-2025, ежемесячно">
                     </div>
                 </div>
+                <!-- 98 У (П1) -->
+                <div class="card mb-3 mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 98 У (П1)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p1_in_number" name="p1_in_number" value="{{ relative.p1_in_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p1_in_date" name="p1_in_date" value="{{ relative.p1_in_date.strftime('%Y-%m-%d') if relative.p1_in_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p1_out_number" name="p1_out_number" value="{{ relative.p1_out_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p1_out_date" name="p1_out_date" value="{{ relative.p1_out_date.strftime('%Y-%m-%d') if relative.p1_out_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p1_pay_date" name="p1_pay_date" value="{{ relative.p1_pay_date.strftime('%Y-%m-%d') if relative.p1_pay_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 755-П2 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 755-П2</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p2_in_number" name="p2_in_number" value="{{ relative.p2_in_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p2_in_date" name="p2_in_date" value="{{ relative.p2_in_date.strftime('%Y-%m-%d') if relative.p2_in_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p2_out_number" name="p2_out_number" value="{{ relative.p2_out_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p2_out_date" name="p2_out_date" value="{{ relative.p2_out_date.strftime('%Y-%m-%d') if relative.p2_out_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p2_pay_date" name="p2_pay_date" value="{{ relative.p2_pay_date.strftime('%Y-%m-%d') if relative.p2_pay_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 665()-П3 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 665()-П3</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p3_in_number" name="p3_in_number" value="{{ relative.p3_in_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p3_in_date" name="p3_in_date" value="{{ relative.p3_in_date.strftime('%Y-%m-%d') if relative.p3_in_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p3_out_number" name="p3_out_number" value="{{ relative.p3_out_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p3_out_date" name="p3_out_date" value="{{ relative.p3_out_date.strftime('%Y-%m-%d') if relative.p3_out_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p3_pay_date" name="p3_pay_date" value="{{ relative.p3_pay_date.strftime('%Y-%m-%d') if relative.p3_pay_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ДД-П4 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 ДД-П4</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p4_in_number" name="p4_in_number" value="{{ relative.p4_in_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p4_in_date" name="p4_in_date" value="{{ relative.p4_in_date.strftime('%Y-%m-%d') if relative.p4_in_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p4_out_number" name="p4_out_number" value="{{ relative.p4_out_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p4_out_date" name="p4_out_date" value="{{ relative.p4_out_date.strftime('%Y-%m-%d') if relative.p4_out_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p4_pay_date" name="p4_pay_date" value="{{ relative.p4_pay_date.strftime('%Y-%m-%d') if relative.p4_pay_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- К-П5 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 К-П5</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p5_in_number" name="p5_in_number" value="{{ relative.p5_in_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p5_in_date" name="p5_in_date" value="{{ relative.p5_in_date.strftime('%Y-%m-%d') if relative.p5_in_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p5_out_number" name="p5_out_number" value="{{ relative.p5_out_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p5_out_date" name="p5_out_date" value="{{ relative.p5_out_date.strftime('%Y-%m-%d') if relative.p5_out_date else '' }}">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p5_pay_date" name="p5_pay_date" value="{{ relative.p5_pay_date.strftime('%Y-%m-%d') if relative.p5_pay_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Трек-номер почтового отправления -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📦 Трек-номер почтового отправления</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="track_number" class="form-label">Номер</label>
+                                <input type="text" class="form-control" id="track_number" name="track_number" value="{{ relative.track_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="track_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="track_date" name="track_date" value="{{ relative.track_date.strftime('%Y-%m-%d') if relative.track_date else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Сканы -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">🖼️ Сканы</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_number" class="form-label">№</label>
+                                <input type="text" class="form-control" id="scan_number" name="scan_number" value="{{ relative.scan_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="scan_date" name="scan_date" value="{{ relative.scan_date.strftime('%Y-%m-%d') if relative.scan_date else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_file" class="form-label">Файл скана</label>
+                                <input type="file" class="form-control" id="scan_file" name="scan_file" accept="image/*,.pdf">
+                                {% if relative.scan_path %}
+                                <small class="form-text text-muted">
+                                    Текущий файл: <a href="{{ url_for('download_file', filename=relative.scan_path.replace('uploads/scans/', '')) }}" target="_blank">{{ relative.scan_path.split('/')[-1] }}</a>
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </form>
 
             <!-- Форма для удаления (скрытая) -->
@@ -223,88 +439,211 @@
 </div>
 
 <script>
+// Сохраняем оригинальные данные при загрузке страницы
+console.log('=== ИНИЦИАЛИЗАЦИЯ edit_relative.html ===');
+console.log('relative_id:', {{ relative.id }});
+console.log('person_id:', {{ person.id }});
+console.log('URL для закрытия:', "{{ url_for('manage_relatives', person_id=person.id) }}");
+
+var originalFormData = getFormData();
+console.log('Оригинальные данные:', originalFormData);
+
 // Функция для сбора текущих данных формы
 function getFormData() {
     return {
-        last_name: document.getElementById('last_name').value,
-        first_name: document.getElementById('first_name').value,
-        middle_name: document.getElementById('middle_name').value,
-        birth_date: document.getElementById('birth_date').value,
-        phone: document.getElementById('phone').value,
-        relation_degree: document.getElementById('relation_degree').value,
-        size: document.getElementById('size').value,
-        registration_address: document.getElementById('registration_address').value,
-        actual_address: document.getElementById('actual_address').value,
-        period_assignment: document.getElementById('period_assignment').value
+        last_name: document.getElementById('last_name')?.value || '',
+        first_name: document.getElementById('first_name')?.value || '',
+        middle_name: document.getElementById('middle_name')?.value || '',
+        birth_date: document.getElementById('birth_date')?.value || '',
+        phone: document.getElementById('phone')?.value || '',
+        relation_degree: document.getElementById('relation_degree')?.value || '',
+        size: document.getElementById('size')?.value || '',
+        registration_address: document.getElementById('registration_address')?.value || '',
+        actual_address: document.getElementById('actual_address')?.value || '',
+        period_assignment: document.getElementById('period_assignment')?.value || ''
     };
 }
 
-// Функция для сравнения данных
+// Функция для проверки изменений
 function hasChanges() {
-    var formData = getFormData();
+    var currentData = getFormData();
+    console.log('Текущие данные:', currentData);
 
-    // Данные из БД (переданные из шаблона)
-    var originalData = {
-        last_name: '{{ relative.last_name or '' }}',
-        first_name: '{{ relative.first_name or '' }}',
-        middle_name: '{{ relative.middle_name or '' }}',
-        birth_date: '{{ relative.birth_date.strftime("%Y-%m-%d") if relative.birth_date else '' }}',
-        phone: '{{ relative.phone or '' }}',
-        relation_degree: '{{ relative.relation_degree or '' }}',
-        size: '{{ relative.size or '' }}',
-        registration_address: '{{ relative.registration_address or '' }}',
-        actual_address: '{{ relative.actual_address or '' }}',
-        period_assignment: '{{ relative.period_assignment or '' }}'
-    };
-
-    // Сравниваем каждое поле
-    for (var key in formData) {
-        if (formData[key] !== originalData[key]) {
-            console.log('Изменение в поле:', key, formData[key], originalData[key]);
+    for (var key in originalFormData) {
+        if (currentData[key] !== originalFormData[key]) {
+            console.log('ИЗМЕНЕНИЕ найдено в поле:', key,
+                        'было:', originalFormData[key],
+                        'стало:', currentData[key]);
             return true;
         }
     }
+    console.log('Изменений нет');
     return false;
 }
 
 // Обработчик для кнопки "Закрыть"
 function handleClose() {
-    // Проверяем, есть ли изменения
-    if (hasChanges()) {
-        // Если есть изменения - спрашиваем
-        var result = confirm('Сохранить измененные данные?');
-        if (result) {
-            // Да - сохраняем
-            document.getElementById('editRelativeForm').submit();
+    console.log('=== handleClose ВЫЗВАНА ===');
+    console.log('Проверка наличия изменений...');
+
+    try {
+        var changes = hasChanges();
+        console.log('Результат hasChanges:', changes);
+
+        if (changes) {
+            console.log('Есть изменения, показываем диалог');
+            var result = confirm('Сохранить измененные данные?');
+            console.log('Результат confirm:', result);
+
+            if (result) {
+                console.log('Пользователь выбрал ДА - сохраняем');
+
+                // Добавляем скрытое поле для тихого сохранения
+                var form = document.getElementById('editRelativeForm');
+                var silentInput = document.createElement('input');
+                silentInput.type = 'hidden';
+                silentInput.name = 'silent_save';
+                silentInput.value = 'true';
+                form.appendChild(silentInput);
+
+                console.log('Отправляем форму...');
+                form.submit();
+            } else {
+                console.log('Пользователь выбрал НЕТ - закрываем без сохранения');
+                var url = "{{ url_for('manage_relatives', person_id=person.id) }}";
+                console.log('Переход по URL:', url);
+                window.location.href = url;
+            }
         } else {
-            // Нет - просто закрываем
-            window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
+            console.log('Изменений нет - сразу закрываем');
+            var url = "{{ url_for('manage_relatives', person_id=person.id) }}";
+            console.log('Переход по URL:', url);
+            window.location.href = url;
         }
-    } else {
-        // Если изменений нет - сразу закрываем без диалога
-        window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
+    } catch (error) {
+        console.error('ОШИБКА в handleClose:', error);
+        alert('Произошла ошибка: ' + error.message);
     }
 }
 
 // Функция для подтверждения удаления
 function confirmDelete() {
+    console.log('confirmDelete вызвана');
     if (confirm('Вы уверены, что хотите удалить этого родственника?')) {
+        console.log('Удаление подтверждено');
         document.getElementById('deleteForm').submit();
+    } else {
+        console.log('Удаление отменено');
     }
 }
 
-// Добавляем поддержку клавиатуры (Enter в полях)
+// Функция для поля "Другое"
+function toggleOtherRelation() {
+    console.log('toggleOtherRelation вызвана');
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    if (select && otherContainer && otherInput) {
+        if (select.value === 'other') {
+            console.log('Показываем поле для другого варианта');
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+        } else {
+            console.log('Скрываем поле для другого варианта');
+            otherContainer.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+        }
+    }
+}
+
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM ПОЛНОСТЬЮ ЗАГРУЖЕН ===');
+
+    // Проверяем наличие всех необходимых элементов
+    var form = document.getElementById('editRelativeForm');
+    console.log('Форма найдена:', form ? 'да' : 'нет');
+
+    var closeBtn = document.querySelector('.toolbar-btn-close');
+    console.log('Кнопка закрытия найдена:', closeBtn ? 'да' : 'нет');
+    if (closeBtn) {
+        console.log('Текст кнопки:', closeBtn.textContent);
+        console.log('Атрибут onclick:', closeBtn.getAttribute('onclick'));
+    }
+
+    // Инициализация поля "Другое"
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    if (select && otherContainer && otherInput) {
+        console.log('Поле степени родства найдено, текущее значение:', select.value);
+
+        if (select.value === 'other') {
+            console.log('Активируем поле для другого варианта');
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+        }
+
+        select.addEventListener('change', toggleOtherRelation);
+        console.log('Обработчик change добавлен');
+    }
+
+    // Добавляем обработчик для Enter в полях
     var inputs = document.querySelectorAll('#editRelativeForm input, #editRelativeForm select, #editRelativeForm textarea');
-    inputs.forEach(function(input) {
+    console.log('Найдено полей ввода:', inputs.length);
+
+    inputs.forEach(function(input, index) {
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // Если нажат Enter в любом поле - ничего не делаем,
-                // чтобы не отправлять форму случайно
             }
         });
     });
+});
+
+// Очистка данных при закрытии страницы
+window.addEventListener('beforeunload', function() {
+    console.log('beforeunload: очистка данных');
+    originalFormData = null;
+});
+
+window.addEventListener('pagehide', function() {
+    console.log('pagehide: очистка данных');
+    originalFormData = null;
+});
+</script>
+
+<script>
+function toggleOtherRelation() {
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    if (select.value === 'other') {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+        otherInput.focus();
+    } else {
+        otherContainer.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    // Проверяем, не было ли уже выбрано "Другое"
+    if (select.value === 'other') {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+    }
 });
 </script>
 {% endblock %}

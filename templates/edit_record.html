@@ -114,7 +114,7 @@
         }
 
         .content-wrapper {
-            margin-top: 220px; /* Больше отступ для мобильных из-за нескольких кнопок */
+            margin-top: 220px;
         }
     }
 
@@ -149,6 +149,7 @@
         </button>
     </div>
 </div>
+
 <!-- Основной контент -->
 <div class="content-wrapper">
     <div class="card">
@@ -205,7 +206,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Категория -->
+                <!-- 3. Категория (ИСПРАВЛЕНО: убран category_custom) -->
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">🏷️ Категория</h6>
@@ -214,17 +215,17 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="category" class="form-label">Выберите категорию</label>
-                                <select class="form-select" id="category" name="category">
+                                <select class="form-select" id="category" name="category" onchange="toggleOtherCategory()">
                                     <option value="">-- Выберите --</option>
                                     {% for i in range(1, 7) %}
                                     <option value="{{ i }}" {% if record.category == 'Параметр ' + i|string %}selected{% endif %}>Параметр {{ i }}</option>
                                     {% endfor %}
-                                    <option value="7" {% if record.category_custom %}selected{% endif %}>✏️ Свой вариант</option>
+                                    <option value="other" {% if record.category and record.category not in ['Параметр 1', 'Параметр 2', 'Параметр 3', 'Параметр 4', 'Параметр 5', 'Параметр 6'] %}selected{% endif %}>✏️ Свой вариант</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3" id="customCategoryDiv" style="{% if not record.category_custom %}display: none;{% endif %}">
-                                <label for="category_custom" class="form-label">Свой вариант</label>
-                                <input type="text" class="form-control" id="category_custom" name="category_custom" value="{{ record.category_custom or '' }}" placeholder="Введите свой вариант">
+                            <div class="col-md-6 mb-3" id="otherCategoryContainer" style="{% if record.category and record.category not in ['Параметр 1', 'Параметр 2', 'Параметр 3', 'Параметр 4', 'Параметр 5', 'Параметр 6'] %}display: block;{% else %}display: none;{% endif %}">
+                                <label for="category_other" class="form-label">Введите свой вариант</label>
+                                <input type="text" class="form-control" id="category_other" name="category_other" value="{% if record.category and record.category not in ['Параметр 1', 'Параметр 2', 'Параметр 3', 'Параметр 4', 'Параметр 5', 'Параметр 6'] %}{{ record.category }}{% endif %}" placeholder="Введите название категории">
                             </div>
                         </div>
                     </div>
@@ -325,39 +326,6 @@
 </div>
 
 <script>
-// Логика для поля "Категория"
-document.addEventListener('DOMContentLoaded', function() {
-    var categorySelect = document.getElementById('category');
-    var customDiv = document.getElementById('customCategoryDiv');
-    var customInput = document.getElementById('category_custom');
-
-    if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
-            if (this.value === '7') {
-                customDiv.style.display = 'block';
-                customInput.required = true;
-                customInput.focus();
-            } else {
-                customDiv.style.display = 'none';
-                customInput.required = false;
-            }
-        });
-    }
-
-    // Валидация формы
-    var editForm = document.getElementById('editForm');
-    if (editForm) {
-        editForm.addEventListener('submit', function(e) {
-            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
-                e.preventDefault();
-                alert('Пожалуйста, введите свой вариант категории');
-                customInput.focus();
-            }
-        });
-    }
-});
-</script>
-<script>
 // Функция для сбора текущих данных формы
 function getFormData() {
     return {
@@ -368,7 +336,7 @@ function getFormData() {
         date2: document.getElementById('date2').value,
         place2: document.getElementById('place2').value,
         category: document.getElementById('category').value,
-        category_custom: document.getElementById('category_custom').value,
+        category_other: document.getElementById('category_other')?.value || '',
         position: document.getElementById('position').value,
         rank: document.getElementById('rank').value,
         number: document.getElementById('number').value,
@@ -400,6 +368,25 @@ function hasChanges() {
     }
     console.log('Изменений нет');
     return false;
+}
+
+// Функция для поля "Категория" (свой вариант)
+function toggleOtherCategory() {
+    var select = document.getElementById('category');
+    var otherContainer = document.getElementById('otherCategoryContainer');
+    var otherInput = document.getElementById('category_other');
+
+    if (select && otherContainer && otherInput) {
+        if (select.value === 'other') {
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+            otherInput.focus();
+        } else {
+            otherContainer.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+        }
+    }
 }
 
 // Обработчик для кнопки "Закрыть"
@@ -462,47 +449,45 @@ function handleRelatives() {
     }
 }
 
-// Логика для поля "Категория"
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    var categorySelect = document.getElementById('category');
-    var customDiv = document.getElementById('customCategoryDiv');
-    var customInput = document.getElementById('category_custom');
+    var select = document.getElementById('category');
+    var otherContainer = document.getElementById('otherCategoryContainer');
+    var otherInput = document.getElementById('category_other');
 
-    if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
-            if (this.value === '7') {
-                customDiv.style.display = 'block';
-                customInput.required = true;
-                customInput.focus();
-            } else {
-                customDiv.style.display = 'none';
-                customInput.required = false;
-            }
-        });
+    if (select && otherContainer && otherInput) {
+        // Проверяем, не было ли уже выбрано "Свой вариант"
+        if (select.value === 'other') {
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+        }
+
+        // Добавляем обработчик изменения
+        select.addEventListener('change', toggleOtherCategory);
     }
 
     // Валидация формы
     var editForm = document.getElementById('editForm');
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
-            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
+            var select = document.getElementById('category');
+            var otherInput = document.getElementById('category_other');
+
+            if (select && select.value === 'other' && otherInput && !otherInput.value.trim()) {
                 e.preventDefault();
                 alert('Пожалуйста, введите свой вариант категории');
-                customInput.focus();
+                otherInput.focus();
             }
         });
     }
 });
-</script>
-<script>
+
 // Очистка данных при закрытии страницы
 window.addEventListener('beforeunload', function() {
-    // Очищаем сохраненные данные
     originalFormData = null;
     console.log('Данные очищены при закрытии страницы');
 });
 
-// Также очищаем при уходе со страницы через навигацию
 window.addEventListener('pagehide', function() {
     originalFormData = null;
     console.log('Данные очищены при навигации');

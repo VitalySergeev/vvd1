@@ -9,6 +9,8 @@
 # │   ├── login.html
 # │   ├── dashboard.html
 # │   └── input_form.html
+# │   ├── uploads/           # Загрузка сканов
+# │      └── scans/
 # ├── static/                # Папка для картинок и стилей
 # │   ├── css/
 # │   │   └── bootstrap.min.css
