@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}История изменений записи #{{ record.id }}{% endblock %}
+{% block title %}История изменений родственника{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -16,7 +16,7 @@
         border-radius: 0 0 10px 10px;
         box-sizing: border-box;
     }
-
+    
     .toolbar-container {
         display: flex;
         gap: 80px;
@@ -26,7 +26,7 @@
         margin: 0 auto;
         flex-wrap: wrap;
     }
-
+    
     .toolbar-btn {
         padding: 12px 30px;
         font-size: 16px;
@@ -41,26 +41,26 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         text-decoration: none;
     }
-
+    
     .toolbar-btn-close {
         background: white;
         color: #dc3545;
         border: 2px solid #dc3545;
     }
-
+    
     .toolbar-btn-close:hover {
         background: #dc3545;
         color: white;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
     }
-
+    
     /* Контейнер для основного контента */
     .content-wrapper {
         margin-top: 80px;
         padding: 20px;
     }
-
+    
     /* Адаптивность для мобильных */
     @media (max-width: 768px) {
         .toolbar-container {
@@ -68,38 +68,44 @@
             flex-direction: column;
             align-items: stretch;
         }
-
+        
         .toolbar-btn {
             width: 100%;
             justify-content: center;
         }
-
+        
         .content-wrapper {
             margin-top: 120px;
         }
     }
-
-    /* Стили для карточки записи */
-    .record-card {
+    
+    /* Стили для карточек */
+    .person-card {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-
-    /* Стили для кликабельных строк истории */
+    
+    .relative-card {
+        background: linear-gradient(135deg, #fff5e6 0%, #ffe0b3 100%);
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Стили для кликабельных строк */
     .history-row {
         cursor: pointer;
         transition: all 0.2s ease;
         border-left: 4px solid transparent;
     }
-
+    
     .history-row:hover {
         background-color: #f0f8ff !important;
         border-left-color: #007bff;
         transform: translateX(5px);
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-
+    
     .changes-count {
         background-color: #17a2b8;
         color: black;
@@ -109,25 +115,25 @@
         font-size: 0.9em;
         display: inline-block;
     }
-
+    
     /* Стили для модального окна */
     .modal-content {
         border-radius: 10px;
         overflow: hidden;
     }
-
+    
     .modal-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 15px 20px;
     }
-
+    
     .modal-body {
         max-height: 500px;
         overflow-y: auto;
         padding: 20px;
     }
-
+    
     .change-detail {
         margin-bottom: 15px;
         padding: 12px;
@@ -135,21 +141,21 @@
         border-radius: 8px;
         border-left: 4px solid #28a745;
     }
-
+    
     .change-detail .field {
         font-weight: bold;
         color: #0066cc;
         margin-bottom: 8px;
         font-size: 1.1em;
     }
-
+    
     .change-detail .values {
         display: flex;
         align-items: center;
         gap: 15px;
         flex-wrap: wrap;
     }
-
+    
     .change-detail .old-value {
         color: #dc3545;
         text-decoration: line-through;
@@ -157,7 +163,7 @@
         padding: 5px 12px;
         border-radius: 5px;
     }
-
+    
     .change-detail .new-value {
         color: #28a745;
         font-weight: bold;
@@ -165,7 +171,7 @@
         padding: 5px 12px;
         border-radius: 5px;
     }
-
+    
     .change-detail .arrow {
         color: #666;
         font-size: 18px;
@@ -186,13 +192,24 @@
 <!-- Основной контент -->
 <div class="content-wrapper">
     <!-- Карточка с основной записью -->
-    <div class="card record-card mb-4">
+    <div class="card person-card mb-3">
         <div class="card-body">
-            <h5 class="card-title">📜 История изменений записи #{{ record.id }}</h5>
+            <h5 class="card-title">👤 Основная запись</h5>
             <p class="card-text">
-                <strong>{{ record.last_name }} {{ record.first_name }} {{ record.middle_name }}</strong><br>
-                Дата рождения: {{ record.birth_date.strftime('%d.%m.%Y') if record.birth_date else '-' }}<br>
-                <small class="text-muted">Создано: {{ record.created_at.strftime('%d.%m.%Y %H:%M') }} ({{ record.author.full_name or record.author.username }})</small>
+                <strong>{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}</strong><br>
+                Дата рождения: {{ person.birth_date.strftime('%d.%m.%Y') if person.birth_date else '-' }}
+            </p>
+        </div>
+    </div>
+    
+    <!-- Карточка с родственником -->
+    <div class="card relative-card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">👨‍👩‍👧‍👦 Родственник</h5>
+            <p class="card-text">
+                <strong>{{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}</strong><br>
+                Степень родства: {{ relative.relation_degree or '-' }}<br>
+                <small class="text-muted">Создано: {{ relative.created_at.strftime('%d.%m.%Y %H:%M') if relative.created_at else '-' }}</small>
             </p>
         </div>
     </div>
@@ -200,7 +217,7 @@
     <!-- Таблица истории -->
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Журнал изменений</h5>
+            <h5 class="mb-0">📜 История изменений родственника</h5>
         </div>
         <div class="card-body">
             {% if grouped_history %}
@@ -233,7 +250,7 @@
             </div>
             {% else %}
             <div class="alert alert-info">
-                У этой записи пока нет истории изменений.
+                У этого родственника пока нет истории изменений.
             </div>
             {% endif %}
         </div>
@@ -245,7 +262,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">📋 Детали изменений</h5>
+                <h5 class="modal-title">📋 Детали изменений родственника</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="changesModalBody">
@@ -260,11 +277,11 @@
 
 <script>
 function showChanges(changes) {
-    console.log('Показываем изменения:', changes);
-
+    console.log('Показываем изменения родственника:', changes);
+    
     var modalBody = document.getElementById('changesModalBody');
     var html = '';
-
+    
     for (var i = 0; i < changes.length; i++) {
         var change = changes[i];
         html += '<div class="change-detail">';
@@ -276,9 +293,9 @@ function showChanges(changes) {
         html += '</div>';
         html += '</div>';
     }
-
+    
     modalBody.innerHTML = html;
-
+    
     // Показываем модальное окно (Bootstrap)
     var modal = new bootstrap.Modal(document.getElementById('changesModal'));
     modal.show();

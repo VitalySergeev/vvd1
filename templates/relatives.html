@@ -81,7 +81,7 @@
 
     /* Контейнер для основного контента - без отступа */
     .content-wrapper {
-        margin-top: 70px;  /* Минимальный отступ только под панель */
+        margin-top: 70px;
         padding: 0 20px 20px 20px;
     }
 
@@ -90,13 +90,13 @@
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 0 !important;  /* Убираем отступ снизу */
+        margin-bottom: 0 !important;
         border-radius: 0 0 10px 10px;
     }
 
     /* Стили для сворачиваемого блока добавления */
     .add-section {
-        margin-top: 0;  /* Убираем отступ сверху */
+        margin-top: 0;
         border-radius: 0;
     }
 
@@ -129,6 +129,26 @@
         display: none;
     }
 
+    /* Стили для кнопки истории */
+    .btn-history {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-history:hover {
+        background-color: #138496;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
     /* Адаптивность для мобильных */
     @media (max-width: 768px) {
         .toolbar-container {
@@ -148,6 +168,11 @@
 
         .table td, .table th {
             white-space: nowrap;
+        }
+
+        .btn-history {
+            padding: 3px 6px;
+            font-size: 0.8em;
         }
     }
 </style>
@@ -189,72 +214,276 @@
             </h5>
         </div>
         <div class="add-form" id="addForm">
-            <form method="post" id="relativeForm">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="last_name" class="form-label">Фамилия</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+            <form method="post" id="relativeForm" enctype="multipart/form-data">
+                <!-- Основные данные -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">👤 Основные данные</h6>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="first_name" class="form-label">Имя</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="middle_name" class="form-label">Отчество</label>
-                        <input type="text" class="form-control" id="middle_name" name="middle_name">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="last_name" class="form-label">Фамилия</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="first_name" class="form-label">Имя</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="middle_name" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="middle_name" name="middle_name">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="birth_date" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="phone" class="form-label">Телефон</label>
+                                <input type="text" class="form-control" id="phone" name="phone">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="relation_degree" class="form-label">Степень родства</label>
+                                <select class="form-select" id="relation_degree" name="relation_degree" onchange="toggleOtherRelation()">
+                                    <option value="">-- Выберите --</option>
+                                    <option value="Супруг(а)">Супруг(а)</option>
+                                    <option value="Сын">Сын</option>
+                                    <option value="Дочь">Дочь</option>
+                                    <option value="Отец">Отец</option>
+                                    <option value="Мать">Мать</option>
+                                    <option value="Брат">Брат</option>
+                                    <option value="Сестра">Сестра</option>
+                                    <option value="other">✏️ Другое (ввести)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3" id="other_relation_container" style="display: none;">
+                                <label for="other_relation" class="form-label">Укажите степень родства</label>
+                                <input type="text" class="form-control" id="other_relation" name="other_relation" placeholder="Введите свой вариант">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="registration_address" class="form-label">Адрес регистрации</label>
+                                <textarea class="form-control" id="registration_address" name="registration_address" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="actual_address" class="form-label">Адрес фактического проживания</label>
+                                <textarea class="form-control" id="actual_address" name="actual_address" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="period_assignment" class="form-label">Период назначения</label>
+                                <input type="text" class="form-control" id="period_assignment" name="period_assignment" placeholder="Например: 2024-2025, ежемесячно">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="birth_date" class="form-label">Дата рождения</label>
-                        <input type="date" class="form-control" id="birth_date" name="birth_date">
+                <!-- 98 У (П1) -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 98 У (П1)</h6>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="phone" class="form-label">Телефон</label>
-                        <input type="text" class="form-control" id="phone" name="phone">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="relation_degree" class="form-label">Степень родства</label>
-                        <select class="form-select" id="relation_degree" name="relation_degree">
-                            <option value="">-- Выберите --</option>
-                            <option value="Супруг(а)">Супруг(а)</option>
-                            <option value="Сын">Сын</option>
-                            <option value="Дочь">Дочь</option>
-                            <option value="Отец">Отец</option>
-                            <option value="Мать">Мать</option>
-                            <option value="Брат">Брат</option>
-                            <option value="Сестра">Сестра</option>
-                            <option value="Другое">Другое</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="size" class="form-label">Размер</label>
-                        <input type="text" class="form-control" id="size" name="size" placeholder="Например: 42, M, L">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="registration_address" class="form-label">Адрес регистрации</label>
-                        <textarea class="form-control" id="registration_address" name="registration_address" rows="2"></textarea>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="actual_address" class="form-label">Адрес фактического проживания</label>
-                        <textarea class="form-control" id="actual_address" name="actual_address" rows="2"></textarea>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p1_in_number" name="p1_in_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p1_in_date" name="p1_in_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p1_out_number" name="p1_out_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p1_out_date" name="p1_out_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p1_pay_date" name="p1_pay_date">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="period_assignment" class="form-label">Период назначения</label>
-                        <input type="text" class="form-control" id="period_assignment" name="period_assignment" placeholder="Например: 2024-2025, ежемесячно">
+                <!-- 755-П2 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 755-П2</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p2_in_number" name="p2_in_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p2_in_date" name="p2_in_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p2_out_number" name="p2_out_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p2_out_date" name="p2_out_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p2_pay_date" name="p2_pay_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 665()-П3 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 665()-П3</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p3_in_number" name="p3_in_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p3_in_date" name="p3_in_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p3_out_number" name="p3_out_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p3_out_date" name="p3_out_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p3_pay_date" name="p3_pay_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ДД-П4 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 ДД-П4</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p4_in_number" name="p4_in_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p4_in_date" name="p4_in_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p4_out_number" name="p4_out_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p4_out_date" name="p4_out_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p4_pay_date" name="p4_pay_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- К-П5 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📄 К-П5</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_in_number" class="form-label">Вх.№</label>
+                                <input type="text" class="form-control" id="p5_in_number" name="p5_in_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_in_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p5_in_date" name="p5_in_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_out_number" class="form-label">Исх.№</label>
+                                <input type="text" class="form-control" id="p5_out_number" name="p5_out_number" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_out_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="p5_out_date" name="p5_out_date">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_pay_date" class="form-label">Выпл.</label>
+                                <input type="date" class="form-control" id="p5_pay_date" name="p5_pay_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Трек-номер -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📦 Трек-номер почтового отправления</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="track_number" class="form-label">Номер</label>
+                                <input type="text" class="form-control" id="track_number" name="track_number" maxlength="200">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="track_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="track_date" name="track_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сканы -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">🖼️ Сканы</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_number" class="form-label">№</label>
+                                <input type="text" class="form-control" id="scan_number" name="scan_number" maxlength="200">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_date" class="form-label">Дата</label>
+                                <input type="date" class="form-control" id="scan_date" name="scan_date">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="scan_file" class="form-label">Файл скана</label>
+                                <input type="file" class="form-control" id="scan_file" name="scan_file" accept="image/*,.pdf">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </form>
         </div>
     </div>
-
     <!-- Список родственников -->
     <div class="card mt-3">
         <div class="card-header bg-success text-white">
@@ -272,6 +501,7 @@
                             <th>Степень родства</th>
                             <th>Размер</th>
                             <th>Период</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -283,6 +513,13 @@
                             <td>{{ relative.relation_degree or '-' }}</td>
                             <td>{{ relative.size or '-' }}</td>
                             <td>{{ relative.period_assignment or '-' }}</td>
+                            <td onclick="event.stopPropagation();">
+                                {% if current_user.is_admin() %}
+                                <a href="{{ url_for('relative_history', relative_id=relative.id) }}" class="btn-history">
+                                    📜 История
+                                </a>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -326,6 +563,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+</script>
+<script>
+function toggleOtherRelation() {
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    if (select.value === 'other') {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+        otherInput.focus();
+    } else {
+        otherContainer.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.getElementById('relation_degree');
+    var otherContainer = document.getElementById('other_relation_container');
+    var otherInput = document.getElementById('other_relation');
+
+    // Проверяем, не было ли уже выбрано "Другое"
+    if (select.value === 'other') {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+    }
 });
 </script>
 {% endblock %}

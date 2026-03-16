@@ -167,7 +167,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Категория (умное поле) -->
+                <!-- 3. Категория (умное поле) - ИСПРАВЛЕНО -->
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">🏷️ Категория</h6>
@@ -176,7 +176,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="category" class="form-label">Выберите категорию</label>
-                                <select class="form-select" id="category" name="category">
+                                <select class="form-select" id="category" name="category" onchange="toggleOtherCategory()">
                                     <option value="">-- Выберите --</option>
                                     <option value="1">Параметр 1</option>
                                     <option value="2">Параметр 2</option>
@@ -184,12 +184,12 @@
                                     <option value="4">Параметр 4</option>
                                     <option value="5">Параметр 5</option>
                                     <option value="6">Параметр 6</option>
-                                    <option value="7">✏️ Свой вариант</option>
+                                    <option value="other">✏️ Свой вариант</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3" id="customCategoryDiv" style="display: none;">
-                                <label for="category_custom" class="form-label">Свой вариант</label>
-                                <input type="text" class="form-control" id="category_custom" name="category_custom" placeholder="Введите свой вариант">
+                            <div class="col-md-6 mb-3" id="otherCategoryContainer" style="display: none;">
+                                <label for="category_other" class="form-label">Введите свой вариант</label>
+                                <input type="text" class="form-control" id="category_other" name="category_other" placeholder="Введите название категории">
                             </div>
                         </div>
                     </div>
@@ -290,34 +290,53 @@
 </div>
 
 <script>
-// Логика для поля "Категория"
-document.addEventListener('DOMContentLoaded', function() {
-    var categorySelect = document.getElementById('category');
-    var customDiv = document.getElementById('customCategoryDiv');
-    var customInput = document.getElementById('category_custom');
+// Функция для поля "Категория" (свой вариант)
+function toggleOtherCategory() {
+    var select = document.getElementById('category');
+    var otherContainer = document.getElementById('otherCategoryContainer');
+    var otherInput = document.getElementById('category_other');
 
-    if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
-            if (this.value === '7') {
-                customDiv.style.display = 'block';
-                customInput.required = true;
-                customInput.focus();
-            } else {
-                customDiv.style.display = 'none';
-                customInput.required = false;
-                customInput.value = '';
-            }
-        });
+    if (select && otherContainer && otherInput) {
+        if (select.value === 'other') {
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+            otherInput.focus();
+        } else {
+            otherContainer.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+        }
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.getElementById('category');
+    var otherContainer = document.getElementById('otherCategoryContainer');
+    var otherInput = document.getElementById('category_other');
+
+    if (select && otherContainer && otherInput) {
+        // Проверяем, не было ли уже выбрано "Свой вариант"
+        if (select.value === 'other') {
+            otherContainer.style.display = 'block';
+            otherInput.required = true;
+        }
+
+        // Добавляем обработчик изменения
+        select.addEventListener('change', toggleOtherCategory);
     }
 
     // Валидация формы перед отправкой
     var dataForm = document.getElementById('dataForm');
     if (dataForm) {
         dataForm.addEventListener('submit', function(e) {
-            if (categorySelect && categorySelect.value === '7' && customInput && !customInput.value.trim()) {
+            var select = document.getElementById('category');
+            var otherInput = document.getElementById('category_other');
+
+            if (select && select.value === 'other' && otherInput && !otherInput.value.trim()) {
                 e.preventDefault();
                 alert('Пожалуйста, введите свой вариант категории');
-                customInput.focus();
+                otherInput.focus();
             }
         });
     }
