@@ -4,6 +4,13 @@
 # ├── requirements.txt       # Список зависимостей (для памяти)
 # ├── extensions.py          #
 # ├── database/              # Папка для базы данных SQLite
+# ├── migrations/
+# │   ├── versions/
+# │   │   ├── 001_initial.py      # первая миграция
+# │   │   └── 002_new_tables.py   # вторая миграция (после добавления)
+# │   ├── alembic.ini
+# │   ├── env.py
+# │   └── README
 # ├── templates/             # Папка для HTML-шаблонов
 # │   ├── base.html
 # │   ├── login.html

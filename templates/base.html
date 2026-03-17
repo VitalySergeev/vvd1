@@ -3,29 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-
-    <!-- Bootstrap CSS через Bootstrap-Flask -->
-    {{ bootstrap.load_css() }}
-
     <title>{% block title %}Приложение ВВД{% endblock %}</title>
 
-    <!-- Дополнительные стили -->
-    {% block extra_head %}
-    <style>
-        /* Адаптивные настройки для мобильных устройств */
-        @media (max-width: 768px) {
-            body {
-                font-size: 14px;
-            }
-            .btn {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-            .table-responsive {
-                font-size: 12px;
-            }
-        }
+    <!-- Локальный Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 
+    <!-- Дополнительные стили для уведомлений -->
+    <style>
         /* Стили для toast-уведомлений */
         .toast-notification {
             position: fixed;
@@ -82,8 +66,19 @@
             from { width: 100%; }
             to { width: 0%; }
         }
+
+        /* Адаптивные настройки */
+        @media (max-width: 768px) {
+            .toast-notification {
+                min-width: 250px;
+                max-width: 300px;
+                top: 10px;
+                right: 10px;
+            }
+        }
     </style>
-    {% endblock %}
+
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Навигационная панель -->
@@ -143,8 +138,8 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Bootstrap JS через Bootstrap-Flask (помещаем вниз для скорости загрузки) -->
-    {{ bootstrap.load_js() }}
+    <!-- Локальный Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
     <!-- Скрипты для уведомлений -->
     <script>
@@ -175,7 +170,6 @@
         });
     });
     </script>
-
     <!-- Дополнительные скрипты из дочерних шаблонов -->
     {% block scripts %}{% endblock %}
 </body>
