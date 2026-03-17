@@ -3,7 +3,8 @@ from flask import Flask, render_template, redirect, url_for, request, flash, sen
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from flask_bootstrap import Bootstrap5  # Импортируем Bootstrap5
+#from flask_bootstrap import Bootstrap  # Импортируем Bootstrap5
+from flask_migrate import Migrate      # Миграция данных БД
 import openpyxl
 from io import BytesIO
 import os
@@ -20,9 +21,14 @@ from models import User, PersonData, EditHistory, Relative, RelativeHistory
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'запасной-ключ-только-для-разработки')
 
-# Настройки Bootstrap
-app.config['BOOTSTRAP_SERVE_LOCAL'] = True  # Загружать Bootstrap локально
-bootstrap = Bootstrap5(app)  # Инициализируем Bootstrap5
+# # Настройки Bootstrap
+# app.config['BOOTSTRAP_SERVE_LOCAL'] = True  # Загружать Bootstrap локально
+# bootstrap = Bootstrap(app)  # Инициализируем Bootstrap
+#
+# # Добавляем bootstrap в контекст всех шаблонов
+# @app.context_processor
+# def inject_bootstrap():
+#     return dict(bootstrap=bootstrap)
 
 # Создаем путь к папке database в той же директории, где находится app.py
 BASE_DIR = Path(__file__).parent
@@ -37,6 +43,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# ИНИЦИАЛИЗАЦИЯ MIGRATE
+migrate = Migrate(app, db)
 
 # Импортируем модели ПОСЛЕ инициализации db
 from models import User, PersonData, EditHistory
@@ -269,7 +278,7 @@ def edit_record(record_id):
         elif category_value:
             category_value = f"Параметр {category_value}"
 
-        record.category = check_change('category', category)
+        record.category = check_change('category', category_value)
         #record.category_custom = check_change('category_custom', category_custom)
 
         # Остальные поля
@@ -683,6 +692,8 @@ def input_data():
 def manage_relatives(person_id):
     """Управление родственниками для конкретной записи"""
     person = PersonData.query.get_or_404(person_id)
+    relatives = Relative.query.filter_by(person_data_id=person.id).all()
+    return render_template('relatives.html', person=person, relatives=relatives)
 
     if request.method == 'POST':
         # Функция для получения даты
