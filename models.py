@@ -123,7 +123,7 @@ class Relative(db.Model):
 
     # Дополнительные поля
     size = db.Column(db.String(100))
-    period_assignment = db.Column(db.String(200))
+    #period_assignment = db.Column(db.String(200))
 
     # НОВЫЕ ПОЛЯ: 98 У (П1)
     p1_in_number = db.Column(db.String(200))  # Вх.№
@@ -131,6 +131,10 @@ class Relative(db.Model):
     p1_out_number = db.Column(db.String(200)) # Исх.№
     p1_out_date = db.Column(db.Date)          # Дата исх.
     p1_pay_date = db.Column(db.Date)          # Выпл.
+    p1_size = db.Column(db.String(100))  # Размер назначенной П
+    p1_period_from = db.Column(db.Date)  # Период с
+    p1_period_to = db.Column(db.Date)    # Период по
+    p1_period_indefinite = db.Column(db.Boolean, default=False)  # Бессрочно
 
     # НОВЫЕ ПОЛЯ: 755-П2
     p2_in_number = db.Column(db.String(200))
@@ -138,6 +142,10 @@ class Relative(db.Model):
     p2_out_number = db.Column(db.String(200))
     p2_out_date = db.Column(db.Date)
     p2_pay_date = db.Column(db.Date)
+    p2_size = db.Column(db.String(100))
+    p2_period_from = db.Column(db.Date)
+    p2_period_to = db.Column(db.Date)
+    p2_period_indefinite = db.Column(db.Boolean, default=False)
 
     # НОВЫЕ ПОЛЯ: 665()-П3
     p3_in_number = db.Column(db.String(200))
@@ -145,6 +153,10 @@ class Relative(db.Model):
     p3_out_number = db.Column(db.String(200))
     p3_out_date = db.Column(db.Date)
     p3_pay_date = db.Column(db.Date)
+    p3_size = db.Column(db.String(100))
+    p3_period_from = db.Column(db.Date)
+    p3_period_to = db.Column(db.Date)
+    p3_period_indefinite = db.Column(db.Boolean, default=False)
 
     # НОВЫЕ ПОЛЯ: ДД-П4
     p4_in_number = db.Column(db.String(200))
@@ -152,6 +164,10 @@ class Relative(db.Model):
     p4_out_number = db.Column(db.String(200))
     p4_out_date = db.Column(db.Date)
     p4_pay_date = db.Column(db.Date)
+    p4_size = db.Column(db.String(100))
+    p4_period_from = db.Column(db.Date)
+    p4_period_to = db.Column(db.Date)
+    p4_period_indefinite = db.Column(db.Boolean, default=False)
 
     # НОВЫЕ ПОЛЯ: К-П5
     p5_in_number = db.Column(db.String(200))
@@ -159,6 +175,10 @@ class Relative(db.Model):
     p5_out_number = db.Column(db.String(200))
     p5_out_date = db.Column(db.Date)
     p5_pay_date = db.Column(db.Date)
+    p5_size = db.Column(db.String(100))
+    p5_period_from = db.Column(db.Date)
+    p5_period_to = db.Column(db.Date)
+    p5_period_indefinite = db.Column(db.Boolean, default=False)
 
     # НОВЫЕ ПОЛЯ: Трек-номер
     track_number = db.Column(db.String(200))  # Номер

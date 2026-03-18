@@ -16,6 +16,8 @@ from extensions import db, login_manager
 from functools import wraps
 import socket
 from models import User, PersonData, EditHistory, Relative, RelativeHistory
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 
 # Создаем приложение
 app = Flask(__name__)
@@ -96,14 +98,6 @@ def save_edit_history(record_id, user_id, changes):
             db.session.add(history_entry)
     db.session.commit()
 
-# @app.route('/records')   #Старый вариант без поиска
-# @login_required
-# def all_records():
-#     """Страница со ВСЕМИ записями для всех пользователей"""
-#     # Все пользователи видят все записи
-#     records = PersonData.query.order_by(PersonData.created_at.desc()).all()
-#     return render_template('all_records.html', records=records)
-
 @app.route('/records')
 @login_required
 def all_records():
@@ -155,25 +149,24 @@ def edit_record(record_id):
 
     # Убрали проверку на владельца - теперь любой может редактировать любую запись
     if request.method == 'POST':
-        # Функция-помощник для безопасного получения даты
-        def get_date(field_name):   #Отладка 2
+        def get_date(field_name):
             date_str = request.form.get(field_name)
-            # ВАЖНО: печатаем имя поля, которое пришло в параметре field_name
-            print(f"🔍 ПОЛУЧЕНО ЗНАЧЕНИЕ ДЛЯ {field_name}: '{date_str}'")
+            #print(f"📅 get_date для {field_name}: '{date_str}'")
             if date_str:
                 try:
                     parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    print(f"✅ УСПЕШНО ПРЕОБРАЗОВАНО {field_name}: {parsed_date}")
+                    #print(f"  -> преобразовано в {parsed_date}")
                     return parsed_date
                 except (ValueError, TypeError) as e:
-                    print(f"❌ ОШИБКА ПРЕОБРАЗОВАНИЯ {field_name}: {e}")
+                    #print(f"  ❌ ошибка: {e}")
                     return None
-            print(f"⚠️ ПУСТОЕ ЗНАЧЕНИЕ ДЛЯ {field_name}")
+            #print(f"  -> пустое значение")
             return None
 
-        # def get_date(field_name): # Отладка
+        # # Функция-помощник для безопасного получения даты
+        # def get_date(field_name):   #Отладка 2
         #     date_str = request.form.get(field_name)
-        #     # ИСПРАВЛЕНО: теперь печатаем имя поля и его значение
+        #     # ВАЖНО: печатаем имя поля, которое пришло в параметре field_name
         #     print(f"🔍 ПОЛУЧЕНО ЗНАЧЕНИЕ ДЛЯ {field_name}: '{date_str}'")
         #     if date_str:
         #         try:
@@ -184,15 +177,6 @@ def edit_record(record_id):
         #             print(f"❌ ОШИБКА ПРЕОБРАЗОВАНИЯ {field_name}: {e}")
         #             return None
         #     print(f"⚠️ ПУСТОЕ ЗНАЧЕНИЕ ДЛЯ {field_name}")
-        #     return None
-
-        # def get_date(field_name): # Была такая ф-ия на момент эксперимента
-        #     date_str = request.form.get(field_name)
-        #     if date_str:
-        #         try:
-        #             return datetime.strptime(date_str, '%Y-%m-%d').date()
-        #         except (ValueError, TypeError):
-        #             return None
         #     return None
 
         # Собираем изменения
@@ -214,8 +198,6 @@ def edit_record(record_id):
         record.last_name = check_change('last_name', request.form.get('last_name'))
         record.first_name = check_change('first_name', request.form.get('first_name'))
         record.middle_name = check_change('middle_name', request.form.get('middle_name'))
-        #проверка даты
-        #record.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date) #Было
         # Исправление даты рождения
         birth_date_from_form = request.form.get('birth_date')
         if birth_date_from_form:
@@ -223,21 +205,6 @@ def edit_record(record_id):
             if new_birth_date != record.birth_date:
                 changes['birth_date'] = {'old': record.birth_date, 'new': new_birth_date}
                 record.birth_date = new_birth_date
-
-        # birth_date_from_form = request.form.get('birth_date')  # Отладка 1
-        # print(f"📅 ПОЛЕ birth_date из формы: '{birth_date_from_form}'")
-        # if birth_date_from_form:
-        #     # ВЫЗЫВАЕМ get_date НАПРЯМУЮ, а НЕ через check_change
-        #     new_birth_date = get_date('birth_date')
-        #     if new_birth_date != record.birth_date:
-        #         changes['birth_date'] = {'old': record.birth_date, 'new': new_birth_date}
-        #         record.birth_date = new_birth_date
-        #         print(f"✅ Дата рождения изменена на {new_birth_date}")
-        # else:
-        #     print(f"⚠️ Дата рождения не пришла из формы, оставляем: {record.birth_date}")
-
-        # Дата 2 и место
-        #record.date2 = check_change('date2', request.form.get('date2'), get_date)
 
         #Исправление Даты2
         date2_from_form = request.form.get('date2')
@@ -247,29 +214,7 @@ def edit_record(record_id):
                 changes['date2'] = {'old': record.date2, 'new': new_date2}
                 record.date2 = new_date2
 
-        # Отладка 1
-        # date2_from_form = request.form.get('date2')
-        # print(f"📅 ПОЛЕ date2 из формы: '{date2_from_form}'")
-        # if date2_from_form:
-        #     # ВЫЗЫВАЕМ get_date НАПРЯМУЮ, а НЕ через check_change
-        #     new_date2 = get_date('date2')
-        #     if new_date2 != record.date2:
-        #         changes['date2'] = {'old': record.date2, 'new': new_date2}
-        #         record.date2 = new_date2
-        #         print(f"✅ Дата 2 изменена на {new_date2}")
-        # else:
-        #     print(f"⚠️ Дата 2 не пришла из формы, оставляем: {record.date2}")
-
         record.place2 = check_change('place2', request.form.get('place2'))
-
-        # # Категория  версия 1
-        # category = request.form.get('category')
-        # category_custom = None
-        # if category == '7':
-        #     category_custom = request.form.get('category_custom')
-        #     category = category_custom
-        # elif category:
-        #     category = f"Параметр {category}"
 
         # Обработка категории (единое поле)
         category_value = request.form.get('category')
@@ -692,10 +637,21 @@ def input_data():
 def manage_relatives(person_id):
     """Управление родственниками для конкретной записи"""
     person = PersonData.query.get_or_404(person_id)
-    relatives = Relative.query.filter_by(person_data_id=person.id).all()
-    return render_template('relatives.html', person=person, relatives=relatives)
+    #relatives = Relative.query.filter_by(person_data_id=person.id).all()
+    #return render_template('relatives.html', person=person, relatives=relatives)
 
     if request.method == 'POST':
+        # # Отладка
+        # print("=" * 50)
+        # print("ПОЛУЧЕН POST ЗАПРОС НА ДОБАВЛЕНИЕ РОДСТВЕННИКА")
+        # print("Форма данные:")
+        # for key, value in request.form.items():
+        #     print(f"  {key}: {value}")
+        # print("Файлы:")
+        # for key, file in request.files.items():
+        #     if file.filename:
+        #         print(f"  {key}: {file.filename}")
+        # print("=" * 50)
         # Функция для получения даты
         def get_date(field_name):
             date_str = request.form.get(field_name)
@@ -739,14 +695,19 @@ def manage_relatives(person_id):
             #relation_degree=request.form.get('relation_degree'),
             relation_degree=relation_degree,
             size=request.form.get('size'),
-            period_assignment=request.form.get('period_assignment'),
+            #period_assignment=request.form.get('period_assignment'),
 
             # 98 У (П1)
             p1_in_number=request.form.get('p1_in_number'),
-            p1_in_date=get_date('p1_in_date'),
+            #p1_in_date=get_date('p1_in_date'),
+            p1_in_date=request.form.get('p1_in_date'),
             p1_out_number=request.form.get('p1_out_number'),
             p1_out_date=get_date('p1_out_date'),
             p1_pay_date=get_date('p1_pay_date'),
+            p1_size=request.form.get('p1_size'),
+            p1_period_from=get_date('p1_period_from'),
+            p1_period_to=get_date('p1_period_to'),
+            p1_period_indefinite=request.form.get('p1_period_indefinite') == 'true',
 
             # 755-П2
             p2_in_number=request.form.get('p2_in_number'),
@@ -754,6 +715,10 @@ def manage_relatives(person_id):
             p2_out_number=request.form.get('p2_out_number'),
             p2_out_date=get_date('p2_out_date'),
             p2_pay_date=get_date('p2_pay_date'),
+            p2_size=request.form.get('p2_size'),
+            p2_period_from=get_date('p2_period_from'),
+            p2_period_to=get_date('p2_period_to'),
+            p2_period_indefinite=request.form.get('p2_period_indefinite') == 'true',
 
             # 665()-П3
             p3_in_number=request.form.get('p3_in_number'),
@@ -761,6 +726,10 @@ def manage_relatives(person_id):
             p3_out_number=request.form.get('p3_out_number'),
             p3_out_date=get_date('p3_out_date'),
             p3_pay_date=get_date('p3_pay_date'),
+            p3_size=request.form.get('p3_size'),
+            p3_period_from=get_date('p3_period_from'),
+            p3_period_to=get_date('p3_period_to'),
+            p3_period_indefinite=request.form.get('p3_period_indefinite') == 'true',
 
             # ДД-П4
             p4_in_number=request.form.get('p4_in_number'),
@@ -768,6 +737,10 @@ def manage_relatives(person_id):
             p4_out_number=request.form.get('p4_out_number'),
             p4_out_date=get_date('p4_out_date'),
             p4_pay_date=get_date('p4_pay_date'),
+            p4_size=request.form.get('p4_size'),
+            p4_period_from=get_date('p4_period_from'),
+            p4_period_to=get_date('p4_period_to'),
+            p4_period_indefinite=request.form.get('p4_period_indefinite') == 'true',
 
             # К-П5
             p5_in_number=request.form.get('p5_in_number'),
@@ -775,6 +748,10 @@ def manage_relatives(person_id):
             p5_out_number=request.form.get('p5_out_number'),
             p5_out_date=get_date('p5_out_date'),
             p5_pay_date=get_date('p5_pay_date'),
+            p5_size=request.form.get('p5_size'),
+            p5_period_from=get_date('p5_period_from'),
+            p5_period_to=get_date('p5_period_to'),
+            p5_period_indefinite=request.form.get('p5_period_indefinite') == 'true',
 
             # Трек-номер
             track_number=request.form.get('track_number'),
@@ -804,6 +781,13 @@ def edit_relative(relative_id):
     person = relative.main_person
 
     if request.method == 'POST':
+        #Отладка
+        print("\n" + "=" * 60)
+        print("📅 РЕДАКТИРОВАНИЕ РОДСТВЕННИКА - ДАТЫ ИЗ ФОРМЫ:")
+        for key, value in request.form.items():
+            if 'date' in key.lower() or 'period' in key.lower():
+                print(f"  {key}: {value}")
+        print("=" * 60 + "\n")
         # Функция для получения даты
         def get_date(field_name):
             date_str = request.form.get(field_name)
@@ -817,7 +801,7 @@ def edit_relative(relative_id):
         # Собираем изменения
         changes = {}
 
-        # Функция для проверки изменений
+        # Функция для проверки изменений с отладкой
         def check_change(field, form_value, cast_func=None):
             old = getattr(relative, field)
             if cast_func:
@@ -825,15 +809,40 @@ def edit_relative(relative_id):
             else:
                 new = form_value if form_value else None
 
+            print(f"🔍 Поле '{field}': старое='{old}' (тип: {type(old)}), новое='{new}' (тип: {type(new)})")
+
             if old != new:
+                print(f"✅ ИЗМЕНЕНИЕ в поле '{field}'")
                 changes[field] = {'old': old, 'new': new}
+            else:
+                print(f"⏺️ Без изменений в поле '{field}'")
+
             return new
+
+        # Функция для проверки изменений
+        # def check_change(field, form_value, cast_func=None):
+        #     old = getattr(relative, field)
+        #     if cast_func:
+        #         new = cast_func(form_value)
+        #     else:
+        #         new = form_value if form_value else None
+        #
+        #     if old != new:
+        #         changes[field] = {'old': old, 'new': new}
+        #     return new
 
         # Обновляем существующие данные
         relative.last_name = check_change('last_name', request.form.get('last_name'))
         relative.first_name = check_change('first_name', request.form.get('first_name'))
         relative.middle_name = check_change('middle_name', request.form.get('middle_name'))
-        relative.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date)
+        #relative.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date)
+        # Исправление для даты рождения
+        birth_date_from_form = request.form.get('birth_date')
+        if birth_date_from_form:
+            new_birth_date = get_date('birth_date')
+            if new_birth_date != relative.birth_date:
+                changes['birth_date'] = {'old': relative.birth_date, 'new': new_birth_date}
+                relative.birth_date = new_birth_date
         relative.registration_address = check_change('registration_address', request.form.get('registration_address'))
         relative.actual_address = check_change('actual_address', request.form.get('actual_address'))
         relative.phone = check_change('phone', request.form.get('phone'))
@@ -846,7 +855,7 @@ def edit_relative(relative_id):
         relative.relation_degree = check_change('relation_degree', relation_degree)
         #
         relative.size = check_change('size', request.form.get('size'))
-        relative.period_assignment = check_change('period_assignment', request.form.get('period_assignment'))
+        #relative.period_assignment = check_change('period_assignment', request.form.get('period_assignment'))
 
         # НОВЫЕ ПОЛЯ: 98 У (П1)
         relative.p1_in_number = check_change('p1_in_number', request.form.get('p1_in_number'))
@@ -854,6 +863,19 @@ def edit_relative(relative_id):
         relative.p1_out_number = check_change('p1_out_number', request.form.get('p1_out_number'))
         relative.p1_out_date = check_change('p1_out_date', request.form.get('p1_out_date'), get_date)
         relative.p1_pay_date = check_change('p1_pay_date', request.form.get('p1_pay_date'), get_date)
+        relative.p1_size = check_change('p1_size', request.form.get('p1_size'))
+        relative.p1_period_from = check_change('p1_period_from', request.form.get('p1_period_from'), get_date)
+        relative.p1_period_to = check_change('p1_period_to', request.form.get('p1_period_to'), get_date)
+        relative.p1_period_indefinite = check_change('p1_period_indefinite',
+                                                     request.form.get('p1_period_indefinite') == 'true')
+        for field in ['p1_in_date', 'p1_out_date', 'p1_pay_date', 'p1_period_from', 'p1_period_to']:
+            value_from_form = request.form.get(field)
+            if value_from_form:
+                new_value = get_date(field)
+                old_value = getattr(relative, field)
+                if new_value != old_value:
+                    changes[field] = {'old': old_value, 'new': new_value}
+                    setattr(relative, field, new_value)
 
         # НОВЫЕ ПОЛЯ: 755-П2
         relative.p2_in_number = check_change('p2_in_number', request.form.get('p2_in_number'))
@@ -861,6 +883,19 @@ def edit_relative(relative_id):
         relative.p2_out_number = check_change('p2_out_number', request.form.get('p2_out_number'))
         relative.p2_out_date = check_change('p2_out_date', request.form.get('p2_out_date'), get_date)
         relative.p2_pay_date = check_change('p2_pay_date', request.form.get('p2_pay_date'), get_date)
+        relative.p2_size = check_change('p2_size', request.form.get('p2_size'))
+        relative.p2_period_from = check_change('p2_period_from', request.form.get('p2_period_from'), get_date)
+        relative.p2_period_to = check_change('p2_period_to', request.form.get('p2_period_to'), get_date)
+        relative.p2_period_indefinite = check_change('p2_period_indefinite',
+                                                     request.form.get('p2_period_indefinite') == 'true')
+        for field in ['p2_in_date', 'p2_out_date', 'p2_pay_date', 'p2_period_from', 'p2_period_to']:
+            value_from_form = request.form.get(field)
+            if value_from_form:
+                new_value = get_date(field)
+                old_value = getattr(relative, field)
+                if new_value != old_value:
+                    changes[field] = {'old': old_value, 'new': new_value}
+                    setattr(relative, field, new_value)
 
         # НОВЫЕ ПОЛЯ: 665()-П3
         relative.p3_in_number = check_change('p3_in_number', request.form.get('p3_in_number'))
@@ -868,6 +903,19 @@ def edit_relative(relative_id):
         relative.p3_out_number = check_change('p3_out_number', request.form.get('p3_out_number'))
         relative.p3_out_date = check_change('p3_out_date', request.form.get('p3_out_date'), get_date)
         relative.p3_pay_date = check_change('p3_pay_date', request.form.get('p3_pay_date'), get_date)
+        relative.p3_size = check_change('p3_size', request.form.get('p3_size'))
+        relative.p3_period_from = check_change('p3_period_from', request.form.get('p3_period_from'), get_date)
+        relative.p3_period_to = check_change('p3_period_to', request.form.get('p3_period_to'), get_date)
+        relative.p3_period_indefinite = check_change('p3_period_indefinite',
+                                                     request.form.get('p3_period_indefinite') == 'true')
+        for field in ['p3_in_date', 'p3_out_date', 'p3_pay_date', 'p3_period_from', 'p3_period_to']:
+            value_from_form = request.form.get(field)
+            if value_from_form:
+                new_value = get_date(field)
+                old_value = getattr(relative, field)
+                if new_value != old_value:
+                    changes[field] = {'old': old_value, 'new': new_value}
+                    setattr(relative, field, new_value)
 
         # НОВЫЕ ПОЛЯ: ДД-П4
         relative.p4_in_number = check_change('p4_in_number', request.form.get('p4_in_number'))
@@ -875,6 +923,19 @@ def edit_relative(relative_id):
         relative.p4_out_number = check_change('p4_out_number', request.form.get('p4_out_number'))
         relative.p4_out_date = check_change('p4_out_date', request.form.get('p4_out_date'), get_date)
         relative.p4_pay_date = check_change('p4_pay_date', request.form.get('p4_pay_date'), get_date)
+        relative.p4_size = check_change('p4_size', request.form.get('p4_size'))
+        relative.p4_period_from = check_change('p4_period_from', request.form.get('p4_period_from'), get_date)
+        relative.p4_period_to = check_change('p4_period_to', request.form.get('p4_period_to'), get_date)
+        relative.p4_period_indefinite = check_change('p4_period_indefinite',
+                                                     request.form.get('p4_period_indefinite') == 'true')
+        for field in ['p4_in_date', 'p4_out_date', 'p4_pay_date', 'p4_period_from', 'p4_period_to']:
+            value_from_form = request.form.get(field)
+            if value_from_form:
+                new_value = get_date(field)
+                old_value = getattr(relative, field)
+                if new_value != old_value:
+                    changes[field] = {'old': old_value, 'new': new_value}
+                    setattr(relative, field, new_value)
 
         # НОВЫЕ ПОЛЯ: К-П5
         relative.p5_in_number = check_change('p5_in_number', request.form.get('p5_in_number'))
@@ -882,14 +943,39 @@ def edit_relative(relative_id):
         relative.p5_out_number = check_change('p5_out_number', request.form.get('p5_out_number'))
         relative.p5_out_date = check_change('p5_out_date', request.form.get('p5_out_date'), get_date)
         relative.p5_pay_date = check_change('p5_pay_date', request.form.get('p5_pay_date'), get_date)
+        relative.p5_size = check_change('p5_size', request.form.get('p5_size'))
+        relative.p5_period_from = check_change('p5_period_from', request.form.get('p5_period_from'), get_date)
+        relative.p5_period_to = check_change('p5_period_to', request.form.get('p5_period_to'), get_date)
+        relative.p5_period_indefinite = check_change('p5_period_indefinite',
+                                                     request.form.get('p5_period_indefinite') == 'true')
+        for field in ['p5_in_date', 'p5_out_date', 'p5_pay_date', 'p5_period_from', 'p5_period_to']:
+            value_from_form = request.form.get(field)
+            if value_from_form:
+                new_value = get_date(field)
+                old_value = getattr(relative, field)
+                if new_value != old_value:
+                    changes[field] = {'old': old_value, 'new': new_value}
+                    setattr(relative, field, new_value)
 
         # НОВЫЕ ПОЛЯ: Трек-номер
         relative.track_number = check_change('track_number', request.form.get('track_number'))
-        relative.track_date = check_change('track_date', request.form.get('track_date'), get_date)
+        #relative.track_date = check_change('track_date', request.form.get('track_date'), get_date)
+        track_date_from_form = request.form.get('track_date')
+        if track_date_from_form:
+            new_track_date = get_date('track_date')
+            if new_track_date != relative.track_date:
+                changes['track_date'] = {'old': relative.track_date, 'new': new_track_date}
+                relative.track_date = new_track_date
 
         # НОВЫЕ ПОЛЯ: Сканы
         relative.scan_number = check_change('scan_number', request.form.get('scan_number'))
-        relative.scan_date = check_change('scan_date', request.form.get('scan_date'), get_date)
+        #relative.scan_date = check_change('scan_date', request.form.get('scan_date'), get_date)
+        scan_date_from_form = request.form.get('scan_date')
+        if scan_date_from_form:
+            new_scan_date = get_date('scan_date')
+            if new_scan_date != relative.scan_date:
+                changes['scan_date'] = {'old': relative.scan_date, 'new': new_scan_date}
+                relative.scan_date = new_scan_date
 
         # Обработка загрузки файла скана
         if 'scan_file' in request.files:
