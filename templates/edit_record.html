@@ -3,7 +3,7 @@
 
 {% block extra_head %}
 <style>
-    /* Стили для фиксированной панели (такие же как в input_form) */
+    /* Стили для фиксированной панели */
     .fixed-toolbar {
         position: fixed;
         top: 0;
@@ -11,15 +11,15 @@
         right: 0;
         z-index: 9999;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 15px 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        border-radius: 0 0 10px 10px;
+        padding: 8px 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0 0 8px 8px;
         box-sizing: border-box;
     }
 
     .toolbar-container {
         display: flex;
-        gap: 80px;
+        gap: 15px;
         align-items: center;
         justify-content: flex-start;
         max-width: 1400px;
@@ -28,97 +28,141 @@
     }
 
     .toolbar-btn {
-        padding: 12px 30px;
-        font-size: 16px;
-        font-weight: 600;
+        padding: 6px 16px;
+        font-size: 14px;
+        font-weight: 500;
         border: none;
-        border-radius: 8px;
+        border-radius: 5px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        gap: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         text-decoration: none;
+        white-space: nowrap;
     }
 
     .toolbar-btn-save {
         background: #28a745;
         color: white;
-        border: 2px solid #28a745;
+        border: 1px solid #28a745;
     }
 
     .toolbar-btn-save:hover {
         background: #218838;
         border-color: #218838;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-    }
-
-    .toolbar-btn-close {
-        background: white;
-        color: #dc3545;
-        border: 2px solid #dc3545;
-    }
-
-    .toolbar-btn-close:hover {
-        background: #dc3545;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
     }
 
     .toolbar-btn-relatives {
         background: #17a2b8;
         color: white;
-        border: 2px solid #17a2b8;
+        border: 1px solid #17a2b8;
     }
 
     .toolbar-btn-relatives:hover {
         background: #138496;
         border-color: #138496;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .toolbar-btn-award {
+        background: #ffc107;
+        color: #000;
+        border: 1px solid #ffc107;
+    }
+
+    .toolbar-btn-award:hover {
+        background: #e0a800;
+        border-color: #e0a800;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .toolbar-btn-ru {
+        background: #fd7e14;
+        color: white;
+        border: 1px solid #fd7e14;
+    }
+
+    .toolbar-btn-ru:hover {
+        background: #dc6b0a;
+        border-color: #dc6b0a;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(253, 126, 20, 0.3);
     }
 
     .toolbar-btn-history {
-        background: #ffc107;
-        color: #000;
-        border: 2px solid #ffc107;
+        background: #6c757d;
+        color: white;
+        border: 1px solid #6c757d;
     }
 
     .toolbar-btn-history:hover {
-        background: #e0a800;
-        border-color: #e0a800;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+        background: #5a6268;
+        border-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(108, 117, 125, 0.3);
     }
 
-    /* Контейнер для основного контента с отступом под панель */
+    .toolbar-btn-close {
+        background: white;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+
+    .toolbar-btn-close:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Контейнер для основного контента */
     .content-wrapper {
-        margin-top: 80px;
-        padding: 20px;
+        margin-top: 60px;
+        padding: 15px;
+    }
+
+    /* Адаптивность для планшетов */
+    @media (max-width: 992px) {
+        .toolbar-container {
+            gap: 10px;
+        }
+        .toolbar-btn {
+            padding: 5px 12px;
+            font-size: 13px;
+        }
+        .content-wrapper {
+            margin-top: 65px;
+        }
     }
 
     /* Адаптивность для мобильных */
     @media (max-width: 768px) {
-        .toolbar-container {
-            gap: 20px;
-            flex-direction: column;
-            align-items: stretch;
+        .fixed-toolbar {
+            padding: 8px 10px;
         }
-
-        .toolbar-btn {
-            width: 100%;
+        .toolbar-container {
+            gap: 8px;
             justify-content: center;
         }
-
+        .toolbar-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            flex: 1 1 auto;
+            min-width: 70px;
+            justify-content: center;
+        }
         .content-wrapper {
-            margin-top: 220px;
+            margin-top: 120px;
         }
     }
 
-    /* Скрываем заголовок если он есть */
+    /* Скрываем заголовок */
     h2 {
         display: none;
     }
@@ -137,7 +181,14 @@
             👨‍👩‍👧‍👦 Родственники
         </button>
 
-        <!-- Кнопка истории только для администратора -->
+        <button type="button" class="toolbar-btn toolbar-btn-award" onclick="window.location='{{ url_for('manage_awards', person_id=record.id) }}'">
+            🏅 Награды
+        </button>
+
+        <button type="button" class="toolbar-btn toolbar-btn-ru" onclick="window.location='{{ url_for('manage_ru', person_id=record.id) }}'">
+            📋 РУ
+        </button>
+
         {% if current_user.is_admin() %}
         <a href="{{ url_for('record_history', record_id=record.id) }}" class="toolbar-btn toolbar-btn-history">
             📜 История
@@ -206,7 +257,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Категория (ИСПРАВЛЕНО: убран category_custom) -->
+                <!-- 3. Категория -->
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">🏷️ Категория</h6>
@@ -320,6 +371,21 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Особые отметки -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">📝 Особые отметки</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="special_notes" class="form-label">Особые отметки</label>
+                                <textarea class="form-control" id="special_notes" name="special_notes" rows="3">{{ record.special_notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -347,7 +413,8 @@ function getFormData() {
         place2_field: document.getElementById('place2_field').value,
         date4: document.getElementById('date4').value,
         ee: document.getElementById('ee').value,
-        ee4: document.getElementById('ee4').value
+        ee4: document.getElementById('ee4').value,
+        special_notes: document.getElementById('special_notes')?.value || ''
     };
 }
 
@@ -358,8 +425,6 @@ console.log('Оригинальные данные:', originalFormData);
 // Функция для проверки изменений
 function hasChanges() {
     var currentData = getFormData();
-
-    // Сравниваем каждое поле
     for (var key in originalFormData) {
         if (currentData[key] !== originalFormData[key]) {
             console.log('Найдено изменение в поле:', key, 'было:', originalFormData[key], 'стало:', currentData[key]);
@@ -392,22 +457,17 @@ function toggleOtherCategory() {
 // Обработчик для кнопки "Закрыть"
 function handleClose() {
     console.log('Проверка перед закрытием...');
-
     if (hasChanges()) {
         console.log('Есть изменения, показываем диалог');
         var result = confirm('Сохранить измененные данные?');
         if (result) {
             console.log('Пользователь выбрал Да - сохраняем и закрываем');
-
-            // Добавляем скрытое поле для тихого сохранения
             var form = document.getElementById('editForm');
             var silentInput = document.createElement('input');
             silentInput.type = 'hidden';
             silentInput.name = 'silent_save';
             silentInput.value = 'true';
             form.appendChild(silentInput);
-
-            // Отправляем форму
             form.submit();
         } else {
             console.log('Пользователь выбрал Нет - закрываем без сохранения');
@@ -422,22 +482,17 @@ function handleClose() {
 // Обработчик для кнопки "Родственники"
 function handleRelatives() {
     console.log('Проверка перед переходом к родственникам...');
-
     if (hasChanges()) {
         console.log('Есть изменения, показываем диалог');
         var result = confirm('Сохранить измененные данные перед переходом к родственникам?');
         if (result) {
             console.log('Пользователь выбрал Да - сохраняем и переходим');
-
-            // Добавляем скрытое поле для редиректа
             var form = document.getElementById('editForm');
             var redirectInput = document.createElement('input');
             redirectInput.type = 'hidden';
             redirectInput.name = 'redirect_to';
             redirectInput.value = 'relatives';
             form.appendChild(redirectInput);
-
-            // Отправляем форму
             form.submit();
         } else {
             console.log('Пользователь выбрал Нет - переходим без сохранения');
@@ -456,23 +511,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var otherInput = document.getElementById('category_other');
 
     if (select && otherContainer && otherInput) {
-        // Проверяем, не было ли уже выбрано "Свой вариант"
         if (select.value === 'other') {
             otherContainer.style.display = 'block';
             otherInput.required = true;
         }
-
-        // Добавляем обработчик изменения
         select.addEventListener('change', toggleOtherCategory);
     }
 
-    // Валидация формы
     var editForm = document.getElementById('editForm');
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
             var select = document.getElementById('category');
             var otherInput = document.getElementById('category_other');
-
             if (select && select.value === 'other' && otherInput && !otherInput.value.trim()) {
                 e.preventDefault();
                 alert('Пожалуйста, введите свой вариант категории');

@@ -1,10 +1,302 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Редактирование награды{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Стили для фиксированной панели */
+    .fixed-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 0 0 10px 10px;
+        box-sizing: border-box;
+    }
+
+    .toolbar-container {
+        display: flex;
+        gap: 80px;
+        align-items: center;
+        justify-content: flex-start;
+        max-width: 1400px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-decoration: none;
+    }
+
+    .toolbar-btn-save {
+        background: #28a745;
+        color: white;
+        border: 2px solid #28a745;
+    }
+
+    .toolbar-btn-save:hover {
+        background: #218838;
+        border-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .toolbar-btn-delete {
+        background: #dc3545;
+        color: white;
+        border: 2px solid #dc3545;
+    }
+
+    .toolbar-btn-delete:hover {
+        background: #c82333;
+        border-color: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .toolbar-btn-close {
+        background: white;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+    }
+
+    .toolbar-btn-close:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Контейнер для контента */
+    .content-wrapper {
+        margin-top: 80px;
+        padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .toolbar-container {
+            gap: 20px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .toolbar-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .content-wrapper {
+            margin-top: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Фиксированная панель с кнопками -->
+<div class="fixed-toolbar">
+    <div class="toolbar-container">
+        <button type="submit" form="editAwardForm" class="toolbar-btn toolbar-btn-save">
+            💾 Сохранить
+        </button>
+        
+        <button type="button" class="toolbar-btn toolbar-btn-delete" onclick="confirmDelete()">
+            🗑️ Удалить
+        </button>
+        
+        <button type="button" class="toolbar-btn toolbar-btn-close" onclick="handleClose()">
+            ❌ Закрыть
+        </button>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <!-- Карточка с основной записью -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">👤 Основная запись: {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}</h5>
+        </div>
+    </div>
+
+    <!-- Форма редактирования награды -->
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">✏️ Редактирование награды</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="editAwardForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Наименование</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ award.name or '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="number" class="form-label">Номер</label>
+                        <input type="text" class="form-control" id="number" name="number" value="{{ award.number or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="decree_number" class="form-label">Номер Указа</label>
+                        <input type="text" class="form-control" id="decree_number" name="decree_number" value="{{ award.decree_number or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="decree_date" class="form-label">Дата Указа</label>
+                        <input type="date" class="form-control" id="decree_date" name="decree_date" value="{{ award.decree_date.strftime('%Y-%m-%d') if award.decree_date else '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="transferred_to" class="form-label">Кому передана</label>
+                        <select class="form-select" id="transferred_to" name="transferred_to">
+                            <option value="">-- Выберите --</option>
+                            <option value="{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}" {% if award.transferred_to == person.last_name + ' ' + person.first_name + ' ' + person.middle_name %}selected{% endif %}>
+                                👤 {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}
+                            </option>
+                            {% for relative in relatives %}
+                            <option value="{{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}" {% if award.transferred_to == relative.last_name + ' ' + relative.first_name + ' ' + relative.middle_name %}selected{% endif %}>
+                                👨‍👩‍👧‍👦 {{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="transfer_date" class="form-label">Дата передачи Н</label>
+                        <input type="date" class="form-control" id="transfer_date" name="transfer_date" value="{{ award.transfer_date.strftime('%Y-%m-%d') if award.transfer_date else '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="certificate_number" class="form-label">Номер удостоверения</label>
+                        <input type="text" class="form-control" id="certificate_number" name="certificate_number" value="{{ award.certificate_number or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="certificate_transferred_to" class="form-label">Кому передано удостоверение</label>
+                        <select class="form-select" id="certificate_transferred_to" name="certificate_transferred_to">
+                            <option value="">-- Выберите --</option>
+                            <option value="{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}" {% if award.certificate_transferred_to == person.last_name + ' ' + person.first_name + ' ' + person.middle_name %}selected{% endif %}>
+                                👤 {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}
+                            </option>
+                            {% for relative in relatives %}
+                            <option value="{{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}" {% if award.certificate_transferred_to == relative.last_name + ' ' + relative.first_name + ' ' + relative.middle_name %}selected{% endif %}>
+                                👨‍👩‍👧‍👦 {{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="certificate_transfer_date" class="form-label">Дата передачи удостоверения</label>
+                        <input type="date" class="form-control" id="certificate_transfer_date" name="certificate_transfer_date" value="{{ award.certificate_transfer_date.strftime('%Y-%m-%d') if award.certificate_transfer_date else '' }}">
+                    </div>
+                </div>
+            </form>
+
+            <!-- Форма для удаления (скрытая) -->
+            <form id="deleteForm" method="post" action="{{ url_for('delete_award', award_id=award.id) }}" style="display: none;">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для сбора текущих данных формы
+function getFormData() {
+    return {
+        name: document.getElementById('name')?.value || '',
+        number: document.getElementById('number')?.value || '',
+        decree_number: document.getElementById('decree_number')?.value || '',
+        decree_date: document.getElementById('decree_date')?.value || '',
+        transferred_to: document.getElementById('transferred_to')?.value || '',
+        transfer_date: document.getElementById('transfer_date')?.value || '',
+        certificate_number: document.getElementById('certificate_number')?.value || '',
+        certificate_transferred_to: document.getElementById('certificate_transferred_to')?.value || '',
+        certificate_transfer_date: document.getElementById('certificate_transfer_date')?.value || ''
+    };
+}
+
+// Сохраняем оригинальные данные при загрузке страницы
+var originalFormData = getFormData();
+console.log('Оригинальные данные награды:', originalFormData);
+
+// Функция для проверки изменений
+function hasChanges() {
+    var currentData = getFormData();
+
+    for (var key in originalFormData) {
+        if (currentData[key] !== originalFormData[key]) {
+            console.log('Найдено изменение в поле:', key, 'было:', originalFormData[key], 'стало:', currentData[key]);
+            return true;
+        }
+    }
+    console.log('Изменений нет');
+    return false;
+}
+
+// Обработчик для кнопки "Закрыть"
+function handleClose() {
+    console.log('Проверка перед закрытием...');
+
+    if (hasChanges()) {
+        console.log('Есть изменения, показываем диалог');
+        var result = confirm('Сохранить измененные данные?');
+        if (result) {
+            console.log('Пользователь выбрал Да - сохраняем и закрываем');
+
+            // Добавляем скрытое поле для тихого сохранения
+            var form = document.getElementById('editAwardForm');
+            var silentInput = document.createElement('input');
+            silentInput.type = 'hidden';
+            silentInput.name = 'silent_save';
+            silentInput.value = 'true';
+            form.appendChild(silentInput);
+
+            form.submit();
+        } else {
+            console.log('Пользователь выбрал Нет - закрываем без сохранения');
+            window.location.href = "{{ url_for('manage_awards', person_id=person.id) }}";
+        }
+    } else {
+        console.log('Изменений нет - сразу закрываем');
+        window.location.href = "{{ url_for('manage_awards', person_id=person.id) }}";
+    }
+}
+
+// Функция для подтверждения удаления
+function confirmDelete() {
+    if (confirm('Вы уверены, что хотите удалить эту награду?')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+
+// Очистка данных при закрытии страницы
+window.addEventListener('beforeunload', function() {
+    originalFormData = null;
+    console.log('Данные очищены при закрытии страницы');
+});
+
+window.addEventListener('pagehide', function() {
+    originalFormData = null;
+    console.log('Данные очищены при навигации');
+});
+</script>
+{% endblock %}
