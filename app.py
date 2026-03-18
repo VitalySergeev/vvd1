@@ -15,7 +15,7 @@ from extensions import db, login_manager
 # Разграничение прав
 from functools import wraps
 import socket
-from models import User, PersonData, EditHistory, Relative, RelativeHistory
+from models import User, PersonData, EditHistory, Relative, RelativeHistory, Award, RuRecord, AwardHistory
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -163,22 +163,6 @@ def edit_record(record_id):
             #print(f"  -> пустое значение")
             return None
 
-        # # Функция-помощник для безопасного получения даты
-        # def get_date(field_name):   #Отладка 2
-        #     date_str = request.form.get(field_name)
-        #     # ВАЖНО: печатаем имя поля, которое пришло в параметре field_name
-        #     print(f"🔍 ПОЛУЧЕНО ЗНАЧЕНИЕ ДЛЯ {field_name}: '{date_str}'")
-        #     if date_str:
-        #         try:
-        #             parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        #             print(f"✅ УСПЕШНО ПРЕОБРАЗОВАНО {field_name}: {parsed_date}")
-        #             return parsed_date
-        #         except (ValueError, TypeError) as e:
-        #             print(f"❌ ОШИБКА ПРЕОБРАЗОВАНИЯ {field_name}: {e}")
-        #             return None
-        #     print(f"⚠️ ПУСТОЕ ЗНАЧЕНИЕ ДЛЯ {field_name}")
-        #     return None
-
         # Собираем изменения
         changes = {}
 
@@ -262,6 +246,9 @@ def edit_record(record_id):
             if new_ee4 != record.ee4:
                 changes['ee4'] = {'old': record.ee4, 'new': new_ee4}
                 record.ee4 = new_ee4
+
+        # Особые отметки
+        record.special_notes = check_change('special_notes', request.form.get('special_notes'))
 
         # Если есть изменения - сохраняем
         if changes:
@@ -563,27 +550,6 @@ def input_data():
                     return None
             return None
 
-        # # Обработка категории Версия 1
-        # category = request.form.get('category')
-        # category_custom = None
-        # if category == '7':
-        #     category = request.form.get('category_custom')
-        #     category_custom = category  # сохраняем кастомное значение
-        # elif category:
-        #     # Если выбрано 1-6, преобразуем в "Параметр 1", "Параметр 2" и т.д.
-        #     category = f"Параметр {category}"
-
-        # # Обработка категории с поддержкой "Свой вариант" Версия 2
-        # category_value = request.form.get('category')
-        # category_custom = None
-        # category_display = None
-        #
-        # if category_value == 'other':
-        #     category_custom = request.form.get('category_other')
-        #     category_display = category_custom
-        # elif category_value:
-        #     category_display = f"Параметр {category_value}"
-
         # Обработка категории (единое поле)
         category = request.form.get('category')
         if category == 'other':
@@ -622,12 +588,10 @@ def input_data():
 
         db.session.add(new_entry)
         db.session.commit()
-        #flash('Данные успешно сохранены!')
-        #return redirect(url_for('dashboard'))
         #flash('Данные успешно сохранены!','success')
         #return redirect(url_for('input_data'))  # Остаемся на той же странице
         # ПОСЛЕ СОХРАНЕНИЯ ПЕРЕХОДИМ В РЕЖИМ РЕДАКТИРОВАНИЯ
-        flash(f'✅ Запись успешно создана! Теперь вы можете добавить родственников.', 'success')
+        flash(f'✅ Запись успешно создана! Теперь вы можете добавить другие данные.', 'success')
         return redirect(url_for('edit_record', record_id=new_entry.id))
 
     return render_template('input_form.html')
@@ -661,19 +625,33 @@ def manage_relatives(person_id):
                 except (ValueError, TypeError):
                     return None
             return None
+            # КОНЕЦ ФУНКЦИИ get_date - отступ возвращается на уровень if request.method
 
-        # Обработка загрузки файла скана
+        # Обработка загрузки файла скана - С ПОДРОБНОЙ ОТЛАДКОЙ
+        # print("\n" + "=" * 60)
+        # print("🔍 ЗАГРУЗКА ФАЙЛА СКАНА")
+        # print(f"request.files: {request.files}")
+        # print(f"Ключи в request.files: {list(request.files.keys())}")
+        # #
         scan_path = None
         if 'scan_file' in request.files:
             file = request.files['scan_file']
+            # Проверяем расширение файла
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 name, ext = os.path.splitext(filename)
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                # Добавляем timestamp для уникальности
                 new_filename = f"relative_new_{name}_{timestamp}{ext}"
+                # Полный путь для сохранения
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
+                # Создаем папку если её нет
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                # Сохраняем файл
                 file.save(file_path)
+                # Сохраняем относительный путь в БД
                 scan_path = f"uploads/scans/{new_filename}"
+                # print(f"✅ Файл сохранен: {scan_path}")
 
         # Обработка степени родства с поддержкой "Другое"
         relation_degree = request.form.get('relation_degree')
@@ -688,78 +666,85 @@ def manage_relatives(person_id):
             last_name=request.form.get('last_name'),
             first_name=request.form.get('first_name'),
             middle_name=request.form.get('middle_name'),
-            birth_date=get_date('birth_date'),
+            birth_date=get_date('birth_date'),  # ИСПРАВЛЕНО
             registration_address=request.form.get('registration_address'),
             actual_address=request.form.get('actual_address'),
             phone=request.form.get('phone'),
-            #relation_degree=request.form.get('relation_degree'),
             relation_degree=relation_degree,
             size=request.form.get('size'),
-            #period_assignment=request.form.get('period_assignment'),
 
             # 98 У (П1)
             p1_in_number=request.form.get('p1_in_number'),
-            #p1_in_date=get_date('p1_in_date'),
-            p1_in_date=request.form.get('p1_in_date'),
+            p1_in_date=get_date('p1_in_date'),                                      # ИСПРАВЛЕНО
             p1_out_number=request.form.get('p1_out_number'),
-            p1_out_date=get_date('p1_out_date'),
-            p1_pay_date=get_date('p1_pay_date'),
+            p1_out_date=get_date('p1_out_date'),                                    # ИСПРАВЛЕНО
+            p1_pay_date=get_date('p1_pay_date'),                                    # ИСПРАВЛЕНО
             p1_size=request.form.get('p1_size'),
-            p1_period_from=get_date('p1_period_from'),
-            p1_period_to=get_date('p1_period_to'),
+            p1_period_from=get_date('p1_period_from'),                              # ИСПРАВЛЕНО
+            p1_period_to=get_date('p1_period_to'),                                  # ИСПРАВЛЕНО
             p1_period_indefinite=request.form.get('p1_period_indefinite') == 'true',
+            p1_track_number=request.form.get('p1_track_number'),                     # НОВОЕ
+            p1_track_date=get_date('p1_track_date'),                                 # НОВОЕ
 
             # 755-П2
             p2_in_number=request.form.get('p2_in_number'),
-            p2_in_date=get_date('p2_in_date'),
+            p2_in_date=get_date('p2_in_date'),  # ИСПРАВЛЕНО
             p2_out_number=request.form.get('p2_out_number'),
-            p2_out_date=get_date('p2_out_date'),
-            p2_pay_date=get_date('p2_pay_date'),
+            p2_out_date=get_date('p2_out_date'),  # ИСПРАВЛЕНО
+            p2_pay_date=get_date('p2_pay_date'),  # ИСПРАВЛЕНО
             p2_size=request.form.get('p2_size'),
-            p2_period_from=get_date('p2_period_from'),
-            p2_period_to=get_date('p2_period_to'),
+            p2_period_from=get_date('p2_period_from'),  # ИСПРАВЛЕНО
+            p2_period_to=get_date('p2_period_to'),  # ИСПРАВЛЕНО
             p2_period_indefinite=request.form.get('p2_period_indefinite') == 'true',
+            p2_track_number=request.form.get('p2_track_number'),  # НОВОЕ
+            p2_track_date=get_date('p2_track_date'),              # НОВОЕ
 
             # 665()-П3
             p3_in_number=request.form.get('p3_in_number'),
-            p3_in_date=get_date('p3_in_date'),
+            p3_in_date=get_date('p3_in_date'),  # ИСПРАВЛЕНО
             p3_out_number=request.form.get('p3_out_number'),
-            p3_out_date=get_date('p3_out_date'),
-            p3_pay_date=get_date('p3_pay_date'),
+            p3_out_date=get_date('p3_out_date'),  # ИСПРАВЛЕНО
+            p3_pay_date=get_date('p3_pay_date'),  # ИСПРАВЛЕНО
             p3_size=request.form.get('p3_size'),
-            p3_period_from=get_date('p3_period_from'),
-            p3_period_to=get_date('p3_period_to'),
+            p3_period_from=get_date('p3_period_from'),  # ИСПРАВЛЕНО
+            p3_period_to=get_date('p3_period_to'),  # ИСПРАВЛЕНО
             p3_period_indefinite=request.form.get('p3_period_indefinite') == 'true',
+            p3_track_number=request.form.get('p3_track_number'),                  # НОВОЕ
+            p3_track_date=get_date('p3_track_date'),                              # НОВОЕ
 
             # ДД-П4
             p4_in_number=request.form.get('p4_in_number'),
-            p4_in_date=get_date('p4_in_date'),
+            p4_in_date=get_date('p4_in_date'),  # ИСПРАВЛЕНО
             p4_out_number=request.form.get('p4_out_number'),
-            p4_out_date=get_date('p4_out_date'),
-            p4_pay_date=get_date('p4_pay_date'),
+            p4_out_date=get_date('p4_out_date'),  # ИСПРАВЛЕНО
+            p4_pay_date=get_date('p4_pay_date'),  # ИСПРАВЛЕНО
             p4_size=request.form.get('p4_size'),
-            p4_period_from=get_date('p4_period_from'),
-            p4_period_to=get_date('p4_period_to'),
+            p4_period_from=get_date('p4_period_from'),  # ИСПРАВЛЕНО
+            p4_period_to=get_date('p4_period_to'),  # ИСПРАВЛЕНО
             p4_period_indefinite=request.form.get('p4_period_indefinite') == 'true',
+            p4_track_number=request.form.get('p4_track_number'),                    # НОВОЕ
+            p4_track_date=get_date('p4_track_date'),                                # НОВОЕ
 
             # К-П5
             p5_in_number=request.form.get('p5_in_number'),
-            p5_in_date=get_date('p5_in_date'),
+            p5_in_date=get_date('p5_in_date'),  # ИСПРАВЛЕНО
             p5_out_number=request.form.get('p5_out_number'),
-            p5_out_date=get_date('p5_out_date'),
-            p5_pay_date=get_date('p5_pay_date'),
+            p5_out_date=get_date('p5_out_date'),  # ИСПРАВЛЕНО
+            p5_pay_date=get_date('p5_pay_date'),  # ИСПРАВЛЕНО
             p5_size=request.form.get('p5_size'),
-            p5_period_from=get_date('p5_period_from'),
-            p5_period_to=get_date('p5_period_to'),
+            p5_period_from=get_date('p5_period_from'),  # ИСПРАВЛЕНО
+            p5_period_to=get_date('p5_period_to'),  # ИСПРАВЛЕНО
             p5_period_indefinite=request.form.get('p5_period_indefinite') == 'true',
+            p5_track_number=request.form.get('p5_track_number'),                   # НОВОЕ
+            p5_track_date=get_date('p5_track_date'),                               # НОВОЕ
 
-            # Трек-номер
-            track_number=request.form.get('track_number'),
-            track_date=get_date('track_date'),
+            # # Трек-номер
+            # track_number=request.form.get('track_number'),
+            # track_date=get_date('track_date'),  # ИСПРАВЛЕНО
 
             # Сканы
             scan_number=request.form.get('scan_number'),
-            scan_date=get_date('scan_date'),
+            scan_date=get_date('scan_date'),  # ИСПРАВЛЕНО
             scan_path=scan_path
         )
 
@@ -781,13 +766,6 @@ def edit_relative(relative_id):
     person = relative.main_person
 
     if request.method == 'POST':
-        #Отладка
-        print("\n" + "=" * 60)
-        print("📅 РЕДАКТИРОВАНИЕ РОДСТВЕННИКА - ДАТЫ ИЗ ФОРМЫ:")
-        for key, value in request.form.items():
-            if 'date' in key.lower() or 'period' in key.lower():
-                print(f"  {key}: {value}")
-        print("=" * 60 + "\n")
         # Функция для получения даты
         def get_date(field_name):
             date_str = request.form.get(field_name)
@@ -819,23 +797,11 @@ def edit_relative(relative_id):
 
             return new
 
-        # Функция для проверки изменений
-        # def check_change(field, form_value, cast_func=None):
-        #     old = getattr(relative, field)
-        #     if cast_func:
-        #         new = cast_func(form_value)
-        #     else:
-        #         new = form_value if form_value else None
-        #
-        #     if old != new:
-        #         changes[field] = {'old': old, 'new': new}
-        #     return new
-
         # Обновляем существующие данные
         relative.last_name = check_change('last_name', request.form.get('last_name'))
         relative.first_name = check_change('first_name', request.form.get('first_name'))
         relative.middle_name = check_change('middle_name', request.form.get('middle_name'))
-        #relative.birth_date = check_change('birth_date', request.form.get('birth_date'), get_date)
+
         # Исправление для даты рождения
         birth_date_from_form = request.form.get('birth_date')
         if birth_date_from_form:
@@ -843,32 +809,27 @@ def edit_relative(relative_id):
             if new_birth_date != relative.birth_date:
                 changes['birth_date'] = {'old': relative.birth_date, 'new': new_birth_date}
                 relative.birth_date = new_birth_date
+
         relative.registration_address = check_change('registration_address', request.form.get('registration_address'))
         relative.actual_address = check_change('actual_address', request.form.get('actual_address'))
         relative.phone = check_change('phone', request.form.get('phone'))
 
-        #relative.relation_degree = check_change('relation_degree', request.form.get('relation_degree'))
         # Обработка степени родства
         relation_degree = request.form.get('relation_degree')
         if relation_degree == 'other':
             relation_degree = request.form.get('other_relation')
         relative.relation_degree = check_change('relation_degree', relation_degree)
-        #
+
         relative.size = check_change('size', request.form.get('size'))
-        #relative.period_assignment = check_change('period_assignment', request.form.get('period_assignment'))
 
         # НОВЫЕ ПОЛЯ: 98 У (П1)
         relative.p1_in_number = check_change('p1_in_number', request.form.get('p1_in_number'))
-        relative.p1_in_date = check_change('p1_in_date', request.form.get('p1_in_date'), get_date)
         relative.p1_out_number = check_change('p1_out_number', request.form.get('p1_out_number'))
-        relative.p1_out_date = check_change('p1_out_date', request.form.get('p1_out_date'), get_date)
-        relative.p1_pay_date = check_change('p1_pay_date', request.form.get('p1_pay_date'), get_date)
         relative.p1_size = check_change('p1_size', request.form.get('p1_size'))
-        relative.p1_period_from = check_change('p1_period_from', request.form.get('p1_period_from'), get_date)
-        relative.p1_period_to = check_change('p1_period_to', request.form.get('p1_period_to'), get_date)
-        relative.p1_period_indefinite = check_change('p1_period_indefinite',
-                                                     request.form.get('p1_period_indefinite') == 'true')
-        for field in ['p1_in_date', 'p1_out_date', 'p1_pay_date', 'p1_period_from', 'p1_period_to']:
+        relative.p1_period_indefinite = request.form.get('p1_period_indefinite') == 'true'
+        relative.p1_track_number = check_change('p1_track_number', request.form.get('p1_track_number'))  # НОВОЕ
+
+        for field in ['p1_in_date', 'p1_out_date', 'p1_pay_date', 'p1_period_from', 'p1_period_to','p1_track_date']:
             value_from_form = request.form.get(field)
             if value_from_form:
                 new_value = get_date(field)
@@ -879,16 +840,13 @@ def edit_relative(relative_id):
 
         # НОВЫЕ ПОЛЯ: 755-П2
         relative.p2_in_number = check_change('p2_in_number', request.form.get('p2_in_number'))
-        relative.p2_in_date = check_change('p2_in_date', request.form.get('p2_in_date'), get_date)
         relative.p2_out_number = check_change('p2_out_number', request.form.get('p2_out_number'))
-        relative.p2_out_date = check_change('p2_out_date', request.form.get('p2_out_date'), get_date)
-        relative.p2_pay_date = check_change('p2_pay_date', request.form.get('p2_pay_date'), get_date)
         relative.p2_size = check_change('p2_size', request.form.get('p2_size'))
-        relative.p2_period_from = check_change('p2_period_from', request.form.get('p2_period_from'), get_date)
-        relative.p2_period_to = check_change('p2_period_to', request.form.get('p2_period_to'), get_date)
-        relative.p2_period_indefinite = check_change('p2_period_indefinite',
-                                                     request.form.get('p2_period_indefinite') == 'true')
-        for field in ['p2_in_date', 'p2_out_date', 'p2_pay_date', 'p2_period_from', 'p2_period_to']:
+        relative.p2_period_indefinite = request.form.get('p2_period_indefinite') == 'true'
+        relative.p2_track_number = check_change('p2_track_number', request.form.get('p2_track_number'))  # НОВОЕ
+
+
+        for field in ['p2_in_date', 'p2_out_date', 'p2_pay_date', 'p2_period_from', 'p2_period_to','p2_track_date']:
             value_from_form = request.form.get(field)
             if value_from_form:
                 new_value = get_date(field)
@@ -899,16 +857,13 @@ def edit_relative(relative_id):
 
         # НОВЫЕ ПОЛЯ: 665()-П3
         relative.p3_in_number = check_change('p3_in_number', request.form.get('p3_in_number'))
-        relative.p3_in_date = check_change('p3_in_date', request.form.get('p3_in_date'), get_date)
         relative.p3_out_number = check_change('p3_out_number', request.form.get('p3_out_number'))
-        relative.p3_out_date = check_change('p3_out_date', request.form.get('p3_out_date'), get_date)
-        relative.p3_pay_date = check_change('p3_pay_date', request.form.get('p3_pay_date'), get_date)
         relative.p3_size = check_change('p3_size', request.form.get('p3_size'))
-        relative.p3_period_from = check_change('p3_period_from', request.form.get('p3_period_from'), get_date)
-        relative.p3_period_to = check_change('p3_period_to', request.form.get('p3_period_to'), get_date)
-        relative.p3_period_indefinite = check_change('p3_period_indefinite',
-                                                     request.form.get('p3_period_indefinite') == 'true')
-        for field in ['p3_in_date', 'p3_out_date', 'p3_pay_date', 'p3_period_from', 'p3_period_to']:
+        relative.p3_period_indefinite = request.form.get('p3_period_indefinite') == 'true'
+        relative.p3_track_number = check_change('p3_track_number', request.form.get('p3_track_number'))  # НОВОЕ
+
+
+        for field in ['p3_in_date', 'p3_out_date', 'p3_pay_date', 'p3_period_from', 'p3_period_to','p3_track_date']:
             value_from_form = request.form.get(field)
             if value_from_form:
                 new_value = get_date(field)
@@ -919,16 +874,13 @@ def edit_relative(relative_id):
 
         # НОВЫЕ ПОЛЯ: ДД-П4
         relative.p4_in_number = check_change('p4_in_number', request.form.get('p4_in_number'))
-        relative.p4_in_date = check_change('p4_in_date', request.form.get('p4_in_date'), get_date)
         relative.p4_out_number = check_change('p4_out_number', request.form.get('p4_out_number'))
-        relative.p4_out_date = check_change('p4_out_date', request.form.get('p4_out_date'), get_date)
-        relative.p4_pay_date = check_change('p4_pay_date', request.form.get('p4_pay_date'), get_date)
         relative.p4_size = check_change('p4_size', request.form.get('p4_size'))
-        relative.p4_period_from = check_change('p4_period_from', request.form.get('p4_period_from'), get_date)
-        relative.p4_period_to = check_change('p4_period_to', request.form.get('p4_period_to'), get_date)
-        relative.p4_period_indefinite = check_change('p4_period_indefinite',
-                                                     request.form.get('p4_period_indefinite') == 'true')
-        for field in ['p4_in_date', 'p4_out_date', 'p4_pay_date', 'p4_period_from', 'p4_period_to']:
+        relative.p4_period_indefinite = request.form.get('p4_period_indefinite') == 'true'
+        relative.p4_track_number = check_change('p4_track_number', request.form.get('p4_track_number'))  # НОВОЕ
+
+
+        for field in ['p4_in_date', 'p4_out_date', 'p4_pay_date', 'p4_period_from', 'p4_period_to','p4_track_date']:
             value_from_form = request.form.get(field)
             if value_from_form:
                 new_value = get_date(field)
@@ -939,16 +891,13 @@ def edit_relative(relative_id):
 
         # НОВЫЕ ПОЛЯ: К-П5
         relative.p5_in_number = check_change('p5_in_number', request.form.get('p5_in_number'))
-        relative.p5_in_date = check_change('p5_in_date', request.form.get('p5_in_date'), get_date)
         relative.p5_out_number = check_change('p5_out_number', request.form.get('p5_out_number'))
-        relative.p5_out_date = check_change('p5_out_date', request.form.get('p5_out_date'), get_date)
-        relative.p5_pay_date = check_change('p5_pay_date', request.form.get('p5_pay_date'), get_date)
         relative.p5_size = check_change('p5_size', request.form.get('p5_size'))
-        relative.p5_period_from = check_change('p5_period_from', request.form.get('p5_period_from'), get_date)
-        relative.p5_period_to = check_change('p5_period_to', request.form.get('p5_period_to'), get_date)
-        relative.p5_period_indefinite = check_change('p5_period_indefinite',
-                                                     request.form.get('p5_period_indefinite') == 'true')
-        for field in ['p5_in_date', 'p5_out_date', 'p5_pay_date', 'p5_period_from', 'p5_period_to']:
+        relative.p5_period_indefinite = request.form.get('p5_period_indefinite') == 'true'
+        relative.p5_track_number = check_change('p5_track_number', request.form.get('p5_track_number'))  # НОВОЕ
+
+
+        for field in ['p5_in_date', 'p5_out_date', 'p5_pay_date', 'p5_period_from', 'p5_period_to','p5_track_date']:
             value_from_form = request.form.get(field)
             if value_from_form:
                 new_value = get_date(field)
@@ -957,19 +906,17 @@ def edit_relative(relative_id):
                     changes[field] = {'old': old_value, 'new': new_value}
                     setattr(relative, field, new_value)
 
-        # НОВЫЕ ПОЛЯ: Трек-номер
-        relative.track_number = check_change('track_number', request.form.get('track_number'))
-        #relative.track_date = check_change('track_date', request.form.get('track_date'), get_date)
-        track_date_from_form = request.form.get('track_date')
-        if track_date_from_form:
-            new_track_date = get_date('track_date')
-            if new_track_date != relative.track_date:
-                changes['track_date'] = {'old': relative.track_date, 'new': new_track_date}
-                relative.track_date = new_track_date
+        # # НОВЫЕ ПОЛЯ: Трек-номер
+        # relative.track_number = check_change('track_number', request.form.get('track_number'))
+        # track_date_from_form = request.form.get('track_date')
+        # if track_date_from_form:
+        #     new_track_date = get_date('track_date')
+        #     if new_track_date != relative.track_date:
+        #         changes['track_date'] = {'old': relative.track_date, 'new': new_track_date}
+        #         relative.track_date = new_track_date
 
         # НОВЫЕ ПОЛЯ: Сканы
         relative.scan_number = check_change('scan_number', request.form.get('scan_number'))
-        #relative.scan_date = check_change('scan_date', request.form.get('scan_date'), get_date)
         scan_date_from_form = request.form.get('scan_date')
         if scan_date_from_form:
             new_scan_date = get_date('scan_date')
@@ -977,46 +924,97 @@ def edit_relative(relative_id):
                 changes['scan_date'] = {'old': relative.scan_date, 'new': new_scan_date}
                 relative.scan_date = new_scan_date
 
-        # Обработка загрузки файла скана
+        # ОБРАБОТКА ЗАГРУЗКИ ФАЙЛА СКАНА - ВЫНЕСЕНА ИЗ БЛОКА scan_date
+        # print("\n" + "=" * 70)
+        # print("🔍 НАЧАЛО ОБРАБОТКИ ФАЙЛА СКАНА")
+        # print(f"Все ключи в request.files: {list(request.files.keys())}")
+        # print(f"Все ключи в request.form: {list(request.form.keys())}")
+
         if 'scan_file' in request.files:
             file = request.files['scan_file']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                # Добавляем timestamp к имени файла для уникальности
-                name, ext = os.path.splitext(filename)
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                new_filename = f"relative_{relative.id}_{name}_{timestamp}{ext}"
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
-                file.save(file_path)
-                # Сохраняем относительный путь в БД
-                relative.scan_path = f"uploads/scans/{new_filename}"
-                changes['scan_path'] = {'old': relative.scan_path, 'new': new_filename}
+            # print(f"✅ Поле scan_file найдено")
+            # print(f"  - filename: {file.filename}")
+
+            if file and file.filename:
+                # print(f"✅ Файл выбран: '{file.filename}'")
+
+                # Проверяем размер файла
+                file.seek(0, 2)
+                file_size = file.tell()
+                file.seek(0)
+                # print(f"  - размер файла: {file_size} байт")
+
+                if allowed_file(file.filename):
+                    # print(f"✅ Разрешенный тип файла")
+
+                    filename = secure_filename(file.filename)
+                    # print(f"  - безопасное имя: {filename}")
+
+                    name, ext = os.path.splitext(filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    new_filename = f"relative_{relative.id}_{name}_{timestamp}{ext}"
+                    # print(f"  - новое имя: {new_filename}")
+
+                    # print(f"  - папка UPLOAD_FOLDER: {app.config['UPLOAD_FOLDER']}")
+                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    # print(f"  - папка создана/существует")
+
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
+                    # print(f"  - полный путь: {file_path}")
+
+                    try:
+                        file.save(file_path)
+                        # print(f"✅ Файл сохранен")
+
+                        if os.path.exists(file_path):
+                            file_size_saved = os.path.getsize(file_path)
+                            # print(f"✅ Файл существует на диске, размер: {file_size_saved} байт")
+
+                            old_path = relative.scan_path
+                            relative.scan_path = f"uploads/scans/{new_filename}"
+                            # print(f"  - старый путь: {old_path}")
+                            # print(f"  - новый путь: {relative.scan_path}")
+
+                            changes['scan_path'] = {'old': old_path, 'new': relative.scan_path}
+                            # print(f"✅ Изменение добавлено в changes")
+                        else:
+                            print(f"❌ Файл НЕ найден на диске после сохранения!")
+
+                    except Exception as e:
+                        print(f"❌ ИСКЛЮЧЕНИЕ при сохранении файла: {e}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    # print(f"❌ Недопустимый тип файла: {file.filename}")
+                    # print(f"  - разрешенные типы: {ALLOWED_EXTENSIONS}")
+                    flash('Недопустимый тип файла. Разрешены: png, jpg, jpeg, gif, pdf', 'warning')
+            else:
+                print(f"❌ Файл не выбран (filename пустой)")
+        else:
+            print(f"❌ Поле 'scan_file' ОТСУТСТВУЕТ в request.files")
+            print(f"  - Возможно, форма не имеет enctype=multipart/form-data")
+            print(f"  - Или имя поля другое")
+
+        # print("=" * 70 + "\n")
 
         # Если есть изменения - сохраняем
         if changes:
             db.session.commit()
             save_relative_history(relative.id, current_user.id, changes)
-
-            if not request.form.get('silent_save'):
-                flash(f'✅ Данные родственника обновлены! Изменено полей: {len(changes)}', 'success')
+            flash(f'✅ Данные родственника обновлены! Изменено полей: {len(changes)}', 'success')
         else:
-            if not request.form.get('silent_save'):
-                flash('Нет изменений для сохранения', 'info')
+            flash('Нет изменений для сохранения', 'info')
 
-        # Определяем, куда редиректить
-        if request.form.get('silent_save'):
-            return redirect(url_for('manage_relatives', person_id=person.id))
-        else:
-            return redirect(url_for('manage_relatives', person_id=person.id))
+        return redirect(url_for('manage_relatives', person_id=person.id))
 
     return render_template('edit_relative.html', relative=relative, person=person)
-
 
 @app.route('/uploads/<path:filename>')
 @login_required
 def download_file(filename):
     """Скачивание загруженного файла"""
-    return send_from_directory(os.path.join('uploads', 'scans'), filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/relative/history/<int:relative_id>')
 @login_required
 @admin_required  # Только для администратора
@@ -1095,142 +1093,382 @@ def delete_relative(relative_id):
     flash('Родственник удален!', 'success')
     return redirect(url_for('manage_relatives', person_id=person_id))
 
-# @app.route('/relative/delete/<int:relative_id>')
-# @login_required
-# def delete_relative(relative_id):
-#     """Удаление родственника"""
-#     relative = Relative.query.get_or_404(relative_id)
-#     person_id = relative.person_data_id
-#     db.session.delete(relative)
-#     db.session.commit()
-#     flash('Родственник удален!','success')
-#     return redirect(url_for('manage_relatives', person_id=person_id))
 
-# @app.route('/report/simple')
-# @login_required
-# def generate_simple_report():
-#     """Генерирует подробный отчет в Excel"""
-#     entries = PersonData.query.all() #filter_by(user_id=current_user.id).
-#
-#     wb = openpyxl.Workbook()
-#     ws = wb.active
-#     ws.title = "Полный отчет"
-#
-#     # Заголовки для всех полей
-#     headers = [
-#         'ID', 'Фамилия', 'Имя', 'Отчество', 'Дата рождения',
-#         'Дата 2', 'Место 2', 'Категория', 'Свой вариант',
-#         'Должность', 'Звание', 'Номер', 'ЛП', 'Причина ЛП',
-#         'Место', 'ППР', 'Место 2', 'Дата 4', 'ЭЭ', 'ЭЭ4',
-#         'Дата создания', 'Автор'
-#     ]
-#     ws.append(headers)
-#
-#     # Данные
-#     for entry in entries:
-#         # Получаем имя автора
-#         #author_name = entry.author.full_name if entry.author.full_name else entry.author.username
-#         author_name = entry.author.full_name if entry.author and entry.author.full_name else (
-#             entry.author.username if entry.author else 'Неизвестно')
-#
-#         row = [
-#             entry.id,
-#             entry.last_name,
-#             entry.first_name,
-#             entry.middle_name,
-#             entry.birth_date.strftime('%d.%m.%Y') if entry.birth_date else '',
-#             entry.date2.strftime('%d.%m.%Y') if entry.date2 else '',
-#             entry.place2,
-#             entry.category,
-#             entry.category_custom,
-#             entry.position,
-#             entry.rank,
-#             entry.number,
-#             entry.lp,
-#             entry.lp_reason,
-#             entry.place,
-#             entry.ppr,
-#             entry.place2_field,
-#             entry.date4.strftime('%d.%m.%Y') if entry.date4 else '',
-#             entry.ee.strftime('%d.%m.%Y') if entry.ee else '',
-#             entry.ee4.strftime('%d.%m.%Y') if entry.ee4 else '',
-#             entry.created_at.strftime('%d.%m.%Y %H:%M'),
-#             author_name
-#         ]
-#         ws.append(row)
-#
-#     # Автоматическая ширина колонок
-#     for column in ws.columns:
-#         max_length = 0
-#         column_letter = column[0].column_letter
-#         for cell in column:
-#             try:
-#                 if len(str(cell.value)) > max_length:
-#                     max_length = len(str(cell.value))
-#             except:
-#                 pass
-#         adjusted_width = min(max_length + 2, 50)
-#         ws.column_dimensions[column_letter].width = adjusted_width
-#
-#     output = BytesIO()
-#     wb.save(output)
-#     output.seek(0)
-#
-#     return send_file(
-#         output,
-#         as_attachment=True,
-#         download_name=f'отчет_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-#         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-#     )
+@app.route('/person/<int:person_id>/awards', methods=['GET', 'POST'])
+@login_required
+def manage_awards(person_id):
+    """Управление наградами для конкретной записи"""
+    person = PersonData.query.get_or_404(person_id)
+    relatives = Relative.query.filter_by(person_data_id=person.id).all()
+
+    if request.method == 'POST':
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        award = Award(
+            person_data_id=person.id,
+            name=request.form.get('name'),
+            number=request.form.get('number'),
+            decree_number=request.form.get('decree_number'),
+            decree_date=get_date('decree_date'),
+            transferred_to=request.form.get('transferred_to'),
+            transfer_date=get_date('transfer_date'),
+            certificate_number=request.form.get('certificate_number'),
+            certificate_transferred_to=request.form.get('certificate_transferred_to'),
+            certificate_transfer_date=get_date('certificate_transfer_date')
+        )
+
+        db.session.add(award)
+        db.session.commit()
+        flash('✅ Награда добавлена!', 'success')
+        return redirect(url_for('manage_awards', person_id=person.id))
+
+    awards = Award.query.filter_by(person_data_id=person.id).all()
+    return render_template('awards.html', person=person, relatives=relatives, awards=awards)
+
+@app.route('/award/edit/<int:award_id>', methods=['GET', 'POST'])
+@login_required
+def edit_award(award_id):
+    """Редактирование награды"""
+    award = Award.query.get_or_404(award_id)
+    person = award.person
+    relatives = Relative.query.filter_by(person_data_id=person.id).all()
+
+    if request.method == 'POST':
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        changes = {}
+
+        # Функция для проверки изменений текстовых полей
+        def check_change(field, form_value):
+            old = getattr(award, field)
+            new = form_value if form_value else None
+            if old != new:
+                changes[field] = {'old': old, 'new': new}
+            return new
+
+        # Функция для проверки изменений дат
+        def check_date_change(field):
+            old = getattr(award, field)
+            new = get_date(field)
+            if old != new:
+                changes[field] = {'old': old, 'new': new}
+                setattr(award, field, new)
+
+        # Текстовые поля
+        award.name = check_change('name', request.form.get('name'))
+        award.number = check_change('number', request.form.get('number'))
+        award.decree_number = check_change('decree_number', request.form.get('decree_number'))
+        award.transferred_to = check_change('transferred_to', request.form.get('transferred_to'))
+        award.certificate_number = check_change('certificate_number', request.form.get('certificate_number'))
+        award.certificate_transferred_to = check_change('certificate_transferred_to', request.form.get('certificate_transferred_to'))
+
+        # Даты - используем check_date_change
+        check_date_change('decree_date')
+        check_date_change('transfer_date')
+        check_date_change('certificate_transfer_date')
+
+        if changes:
+            db.session.commit()
+            # TODO: добавить историю для наград
+            if not request.form.get('silent_save'):
+                save_award_history(award.id, current_user.id, changes)
+                flash(f'✅ Награда обновлена! Изменено полей: {len(changes)}', 'success')
+        else:
+            if not request.form.get('silent_save'):
+                flash('Нет изменений для сохранения', 'info')
+
+        return redirect(url_for('manage_awards', person_id=person.id))
+
+    return render_template('edit_award.html', award=award, person=person, relatives=relatives)
+
+@app.route('/award/delete/<int:award_id>', methods=['POST'])
+@login_required
+def delete_award(award_id):
+    """Удаление награды"""
+    award = Award.query.get_or_404(award_id)
+    person_id = award.person_data_id
+
+    db.session.delete(award)
+    db.session.commit()
+    flash('✅ Награда удалена!', 'success')
+    return redirect(url_for('manage_awards', person_id=person_id))
+
+def save_award_history(award_id, user_id, changes):
+    """Сохраняет историю изменений награды"""
+    for field_name, values in changes.items():
+        if values['old'] != values['new']:
+            history_entry = AwardHistory(
+                award_id=award_id,
+                user_id=user_id,
+                field_name=field_name,
+                old_value=str(values['old']) if values['old'] else '',
+                new_value=str(values['new']) if values['new'] else ''
+            )
+            db.session.add(history_entry)
+    db.session.commit()
+
+@app.route('/person/<int:person_id>/ru', methods=['GET', 'POST'])
+@login_required
+def manage_ru(person_id):
+    """Управление записью РУ (только одна запись)"""
+    person = PersonData.query.get_or_404(person_id)
+    relatives = Relative.query.filter_by(person_data_id=person.id).all()
+
+    # Проверяем, есть ли уже запись
+    ru_record = RuRecord.query.filter_by(person_data_id=person.id).first()
+
+    if request.method == 'POST':
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # Получаем ID выбранного родственника
+        executor_id = request.form.get('executor')
+        if executor_id:
+            executor_id = int(executor_id)
+
+        # Если записи нет - создаем новую
+        if not ru_record:
+            ru_record = RuRecord(
+                person_data_id=person.id,
+                executor_id=executor_id,
+                executor_text=None,  # Больше не используется
+                amount=float(request.form.get('amount')) if request.form.get('amount') else None,
+                document_number=request.form.get('document_number'),
+                document_date=get_date('document_date')
+            )
+            db.session.add(ru_record)
+            db.session.commit()
+            flash('✅ Запись РУ создана!', 'success')
+        else:
+            # Если запись есть - обновляем
+            changes = {}
+
+            # Проверяем изменения исполнителя
+            if ru_record.executor_id != executor_id:
+                old_executor = ru_record.executor_id
+                ru_record.executor_id = executor_id
+                changes['executor_id'] = {'old': old_executor, 'new': executor_id}
+
+            # Сумма
+            amount_str = request.form.get('amount')
+            new_amount = float(amount_str) if amount_str else None
+            if ru_record.amount != new_amount:
+                changes['amount'] = {'old': ru_record.amount, 'new': new_amount}
+                ru_record.amount = new_amount
+
+            # Номер документа
+            if ru_record.document_number != request.form.get('document_number'):
+                changes['document_number'] = {'old': ru_record.document_number,
+                                              'new': request.form.get('document_number')}
+                ru_record.document_number = request.form.get('document_number')
+
+            # Дата документа
+            new_date = get_date('document_date')
+            if ru_record.document_date != new_date:
+                changes['document_date'] = {'old': ru_record.document_date, 'new': new_date}
+                ru_record.document_date = new_date
+
+            if changes:
+                db.session.commit()
+                flash(f'✅ Запись РУ обновлена! Изменено полей: {len(changes)}', 'success')
+            else:
+                flash('Нет изменений для сохранения', 'info')
+
+        return redirect(url_for('manage_ru', person_id=person.id))
+
+    return render_template('ru_records.html', person=person, relatives=relatives, ru_record=ru_record)
+
+@app.route('/ru/edit/<int:ru_id>', methods=['GET', 'POST'])
+@login_required
+def edit_ru(ru_id):
+    """Редактирование записи РУ"""
+    ru = RuRecord.query.get_or_404(ru_id)
+    person = ru.person
+
+    if request.method == 'POST':
+        def get_date(field_name):
+            date_str = request.form.get(field_name)
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        changes = {}
+
+        def check_change(field, form_value):
+            old = getattr(ru, field)
+            new = form_value if form_value else None
+            if old != new:
+                changes[field] = {'old': old, 'new': new}
+            return new
+
+        def check_date_change(field):
+            old = getattr(ru, field)
+            new = get_date(field)
+            if old != new:
+                changes[field] = {'old': old, 'new': new}
+                setattr(ru, field, new)
+
+        ru.executor = check_change('executor', request.form.get('executor'))
+        ru.document_number = check_change('document_number', request.form.get('document_number'))
+
+        amount_str = request.form.get('amount')
+        if amount_str:
+            ru.amount = float(amount_str)
+        else:
+            ru.amount = None
+
+        check_date_change('document_date')
+
+        if changes:
+            db.session.commit()
+            flash(f'✅ Запись РУ обновлена! Изменено полей: {len(changes)}', 'success')
+        else:
+            flash('Нет изменений для сохранения', 'info')
+
+        return redirect(url_for('manage_ru', person_id=person.id))
+
+    return render_template('edit_ru.html', ru=ru, person=person)
+
+@app.route('/ru/delete/<int:ru_id>', methods=['POST'])
+@login_required
+def delete_ru(ru_id):
+    """Удаление записи РУ"""
+    ru = RuRecord.query.get_or_404(ru_id)
+    person_id = ru.person_data_id
+
+    db.session.delete(ru)
+    db.session.commit()
+    flash('✅ Запись РУ удалена!', 'success')
+    return redirect(url_for('manage_ru', person_id=person_id))
 
 # ОТЧЕТЫ
 @app.route('/report/r2026')
 @login_required
 def report_r2026():
-    """Отчет Р2026 - все записи"""
-    entries = PersonData.query.all()
+    """Отчет Р2026 с данными основных записей и их родственников"""
+    entries = PersonData.query.order_by(PersonData.id).all()
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Отчет Р2026"
 
+    # Заголовки
     headers = [
-        'ID', 'Фамилия', 'Имя', 'Отчество', 'Дата рождения',
-        'Дата 2', 'Место 2', 'Категория',
-        'Должность', 'Звание', 'Номер', 'ЛП', 'Причина ЛП',
-        'Место', 'ППР', 'Место 2', 'Дата 4', 'ЭЭ', 'ЭЭ4',
-        'Дата создания', 'Автор'
+        '№ п/п',
+        'Звание',
+        'Должность',
+        'Категория',
+        'ФИО',
+        'Номер',
+        'Дата рождения',
+        'Дата 2',
+        'Дата 4',
+        'Место 2',
+        'ППР',
+        'Степень родства',
+        'ФИО родственника',
+        'Дата рождения родственника',
+        'Адрес регистрации',
+        'Адрес проживания',
+        'Телефон',
+        '98 У (П1) Исх.',
+        '98 У (П1) Вх.'
     ]
     ws.append(headers)
 
-    for entry in entries:
-        author_name = entry.author.full_name if entry.author and entry.author.full_name else (
-            entry.author.username if entry.author else 'Неизвестно')
+    row_counter = 1
 
-        row = [
-            entry.id,
-            entry.last_name,
-            entry.first_name,
-            entry.middle_name,
-            entry.birth_date.strftime('%d.%m.%Y') if entry.birth_date else '',
-            entry.date2.strftime('%d.%m.%Y') if entry.date2 else '',
-            entry.place2,
-            entry.category,
-            entry.position,
-            entry.rank,
-            entry.number,
-            entry.lp,
-            entry.lp_reason,
-            entry.place,
-            entry.ppr,
-            entry.place2_field,
-            entry.date4.strftime('%d.%m.%Y') if entry.date4 else '',
-            entry.ee.strftime('%d.%m.%Y') if entry.ee else '',
-            entry.ee4.strftime('%d.%m.%Y') if entry.ee4 else '',
-            entry.created_at.strftime('%d.%m.%Y %H:%M'),
-            author_name
-        ]
-        ws.append(row)
+    for entry in entries:
+        # Получаем всех родственников для этой записи
+        relatives = Relative.query.filter_by(person_data_id=entry.id).all()
+
+        if relatives:
+            # Для каждого родственника создаем отдельную строку
+            for relative in relatives:
+                # Формируем ФИО основной записи
+                full_name = f"{entry.last_name or ''} {entry.first_name or ''} {entry.middle_name or ''}".strip()
+
+                # Формируем ФИО родственника
+                relative_full_name = f"{relative.last_name or ''} {relative.first_name or ''} {relative.middle_name or ''}".strip()
+
+                # Формируем поля 98 У (П1)
+                p1_out = f"{relative.p1_out_number or ''} {relative.p1_out_date.strftime('%d.%m.%Y') if relative.p1_out_date else ''}".strip()
+                p1_in = f"{relative.p1_in_number or ''} {relative.p1_in_date.strftime('%d.%m.%Y') if relative.p1_in_date else ''}".strip()
+
+                row = [
+                    row_counter,  # № п/п
+                    entry.rank or '',  # Звание
+                    entry.position or '',  # Должность
+                    entry.category or '',  # Категория
+                    full_name,  # ФИО основной записи
+                    entry.number or '',  # Номер
+                    entry.birth_date.strftime('%d.%m.%Y') if entry.birth_date else '',  # Дата рождения
+                    entry.date2.strftime('%d.%m.%Y') if entry.date2 else '',  # Дата 2
+                    entry.date4.strftime('%d.%m.%Y') if entry.date4 else '',  # Дата 4
+                    entry.place2 or '',  # Место 2
+                    entry.ppr or '',  # ППР
+                    relative.relation_degree or '',  # Степень родства
+                    relative_full_name,  # ФИО родственника
+                    relative.birth_date.strftime('%d.%m.%Y') if relative.birth_date else '',
+                    # Дата рождения родственника
+                    relative.registration_address or '',  # Адрес регистрации
+                    relative.actual_address or '',  # Адрес проживания
+                    relative.phone or '',  # Телефон
+                    p1_out,  # 98 У (П1) Исх.
+                    p1_in  # 98 У (П1) Вх.
+                ]
+                ws.append(row)
+                row_counter += 1
+        else:
+            # Если нет родственников, создаем одну строку с пустыми полями родственника
+            full_name = f"{entry.last_name or ''} {entry.first_name or ''} {entry.middle_name or ''}".strip()
+
+            row = [
+                row_counter,
+                entry.rank or '',
+                entry.position or '',
+                entry.category or '',
+                full_name,
+                entry.number or '',
+                entry.birth_date.strftime('%d.%m.%Y') if entry.birth_date else '',
+                entry.date2.strftime('%d.%m.%Y') if entry.date2 else '',
+                entry.date4.strftime('%d.%m.%Y') if entry.date4 else '',
+                entry.place2 or '',
+                entry.ppr or '',
+                '',  # Степень родства
+                '',  # ФИО родственника
+                '',  # Дата рождения родственника
+                '',  # Адрес регистрации
+                '',  # Адрес проживания
+                '',  # Телефон
+                '',  # 98 У (П1) Исх.
+                ''  # 98 У (П1) Вх.
+            ]
+            ws.append(row)
+            row_counter += 1
 
     # Автоматическая ширина колонок
     for column in ws.columns:
@@ -1255,7 +1493,6 @@ def report_r2026():
         download_name=f'Р2026_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 
 @app.route('/report/t392')
 @login_required

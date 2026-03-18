@@ -1,10 +1,307 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Награды{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Стили для фиксированной панели */
+    .fixed-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: 0 0 10px 10px;
+        box-sizing: border-box;
+    }
+
+    .toolbar-container {
+        display: flex;
+        gap: 80px;
+        align-items: center;
+        justify-content: flex-start;
+        max-width: 1400px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-decoration: none;
+    }
+
+    .toolbar-btn-save {
+        background: #28a745;
+        color: white;
+        border: 2px solid #28a745;
+    }
+
+    .toolbar-btn-save:hover {
+        background: #218838;
+        border-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .toolbar-btn-close {
+        background: white;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+    }
+
+    .toolbar-btn-close:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Контейнер для контента */
+    .content-wrapper {
+        margin-top: 80px;
+        padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .toolbar-container {
+            gap: 20px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .toolbar-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .content-wrapper {
+            margin-top: 140px;
+        }
+    }
+
+    /* Стили для кликабельных строк */
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f0f8ff !important;
+    }
+
+    /* Стили для сворачиваемого блока */
+    .add-section {
+        margin-top: 0;
+    }
+
+    .add-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .add-header:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .add-header h5 {
+        margin: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .add-form {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        padding: 20px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Фиксированная панель с кнопками -->
+<div class="fixed-toolbar">
+    <div class="toolbar-container">
+        <button type="submit" form="awardForm" class="toolbar-btn toolbar-btn-save">
+            💾 Сохранить
+        </button>
+        <a href="{{ url_for('edit_record', record_id=person.id) }}" class="toolbar-btn toolbar-btn-close">
+            ❌ Закрыть
+        </a>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <!-- Карточка с основной записью -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">👤 Основная запись: {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}</h5>
+        </div>
+    </div>
+
+    <!-- Сворачиваемый блок добавления награды -->
+    <div class="add-section mb-4">
+        <div class="add-header" onclick="toggleAddForm()">
+            <h5>
+                <span>➕ Добавить награду</span>
+                <span id="addToggleIcon">▼</span>
+            </h5>
+        </div>
+        <div class="add-form" id="addForm">
+            <form method="post" id="awardForm">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">🏅 Новая награда</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="name" class="form-label">Наименование</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="number" class="form-label">Номер</label>
+                                <input type="text" class="form-control" id="number" name="number">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="decree_number" class="form-label">Номер Указа</label>
+                                <input type="text" class="form-control" id="decree_number" name="decree_number">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="decree_date" class="form-label">Дата Указа</label>
+                                <input type="date" class="form-control" id="decree_date" name="decree_date">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="transferred_to" class="form-label">Кому передана</label>
+                                <select class="form-select" id="transferred_to" name="transferred_to">
+                                    <option value="">-- Выберите --</option>
+                                    <option value="{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}">
+                                        👤 {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}
+                                    </option>
+                                    {% for relative in relatives %}
+                                    <option value="{{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}">
+                                        👨‍👩‍👧‍👦 {{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="transfer_date" class="form-label">Дата передачи Н</label>
+                                <input type="date" class="form-control" id="transfer_date" name="transfer_date">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="certificate_number" class="form-label">Номер удостоверения</label>
+                                <input type="text" class="form-control" id="certificate_number" name="certificate_number">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="certificate_transferred_to" class="form-label">Кому передано удостоверение</label>
+                                <select class="form-select" id="certificate_transferred_to" name="certificate_transferred_to">
+                                    <option value="">-- Выберите --</option>
+                                    <option value="{{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}">
+                                        👤 {{ person.last_name }} {{ person.first_name }} {{ person.middle_name }}
+                                    </option>
+                                    {% for relative in relatives %}
+                                    <option value="{{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}">
+                                        👨‍👩‍👧‍👦 {{ relative.last_name }} {{ relative.first_name }} {{ relative.middle_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="certificate_transfer_date" class="form-label">Дата передачи удостоверения</label>
+                                <input type="date" class="form-control" id="certificate_transfer_date" name="certificate_transfer_date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Список наград -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">📋 Список наград</h5>
+        </div>
+        <div class="card-body">
+            {% if awards %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Наименование</th>
+                            <th>Номер</th>
+                            <th>Номер Указа</th>
+                            <th>Дата Указа</th>
+                            <th>Кому передана</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for award in awards %}
+                        <tr class="clickable-row" onclick="window.location='{{ url_for('edit_award', award_id=award.id) }}'">
+                            <td>{{ award.name }}</td>
+                            <td>{{ award.number or '-' }}</td>
+                            <td>{{ award.decree_number or '-' }}</td>
+                            <td>{{ award.decree_date.strftime('%d.%m.%Y') if award.decree_date else '-' }}</td>
+                            <td>{{ award.transferred_to or '-' }}</td>
+                            <td onclick="event.stopPropagation();">
+                                {% if current_user.is_admin() %}
+                                <a href="{{ url_for('award_history', award_id=award.id) }}" class="btn btn-info btn-sm">📜 История</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                У этой записи пока нет наград. Нажмите "Добавить награду" чтобы создать первую.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAddForm() {
+    var addForm = document.getElementById('addForm');
+    var icon = document.getElementById('addToggleIcon');
+    
+    if (addForm.style.display === 'none' || addForm.style.display === '') {
+        addForm.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        addForm.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('addForm').style.display = 'none';
+});
+</script>
+{% endblock %}

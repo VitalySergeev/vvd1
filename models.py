@@ -58,6 +58,8 @@ class PersonData(db.Model):
     date4 = db.Column(db.Date)
     ee = db.Column(db.Date)
     ee4 = db.Column(db.Date)
+    # НОВОЕ ПОЛЕ
+    special_notes = db.Column(db.Text)  # Особые отметки
 
     # Служебные поля
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -105,38 +107,31 @@ class Relative(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     person_data_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
 
-    # Основные данные родственника
+    # Основные данные (без изменений)
     last_name = db.Column(db.String(100))
     first_name = db.Column(db.String(100))
     middle_name = db.Column(db.String(100))
     birth_date = db.Column(db.Date)
-
-    # Адреса
     registration_address = db.Column(db.String(500))
     actual_address = db.Column(db.String(500))
-
-    # Контактные данные
     phone = db.Column(db.String(50))
-
-    # Информация о родстве
     relation_degree = db.Column(db.String(100))
-
-    # Дополнительные поля
     size = db.Column(db.String(100))
-    #period_assignment = db.Column(db.String(200))
 
-    # НОВЫЕ ПОЛЯ: 98 У (П1)
-    p1_in_number = db.Column(db.String(200))  # Вх.№
-    p1_in_date = db.Column(db.Date)           # Дата вх.
-    p1_out_number = db.Column(db.String(200)) # Исх.№
-    p1_out_date = db.Column(db.Date)          # Дата исх.
-    p1_pay_date = db.Column(db.Date)          # Выпл.
-    p1_size = db.Column(db.String(100))  # Размер назначенной П
-    p1_period_from = db.Column(db.Date)  # Период с
-    p1_period_to = db.Column(db.Date)    # Период по
-    p1_period_indefinite = db.Column(db.Boolean, default=False)  # Бессрочно
+    # 98 У (П1) - ДОБАВЛЯЕМ ТРЕК-НОМЕР И ДАТУ
+    p1_in_number = db.Column(db.String(200))
+    p1_in_date = db.Column(db.Date)
+    p1_out_number = db.Column(db.String(200))
+    p1_out_date = db.Column(db.Date)
+    p1_pay_date = db.Column(db.Date)
+    p1_size = db.Column(db.String(100))
+    p1_period_from = db.Column(db.Date)
+    p1_period_to = db.Column(db.Date)
+    p1_period_indefinite = db.Column(db.Boolean, default=False)
+    p1_track_number = db.Column(db.String(200))  # НОВОЕ: трек-номер для П1
+    p1_track_date = db.Column(db.Date)          # НОВОЕ: дата трека для П1
 
-    # НОВЫЕ ПОЛЯ: 755-П2
+    # 755-П2 - ДОБАВЛЯЕМ ТРЕК-НОМЕР И ДАТУ
     p2_in_number = db.Column(db.String(200))
     p2_in_date = db.Column(db.Date)
     p2_out_number = db.Column(db.String(200))
@@ -146,8 +141,10 @@ class Relative(db.Model):
     p2_period_from = db.Column(db.Date)
     p2_period_to = db.Column(db.Date)
     p2_period_indefinite = db.Column(db.Boolean, default=False)
+    p2_track_number = db.Column(db.String(200))  # НОВОЕ: трек-номер для П2
+    p2_track_date = db.Column(db.Date)          # НОВОЕ: дата трека для П2
 
-    # НОВЫЕ ПОЛЯ: 665()-П3
+    # 665()-П3 - ДОБАВЛЯЕМ ТРЕК-НОМЕР И ДАТУ
     p3_in_number = db.Column(db.String(200))
     p3_in_date = db.Column(db.Date)
     p3_out_number = db.Column(db.String(200))
@@ -157,8 +154,10 @@ class Relative(db.Model):
     p3_period_from = db.Column(db.Date)
     p3_period_to = db.Column(db.Date)
     p3_period_indefinite = db.Column(db.Boolean, default=False)
+    p3_track_number = db.Column(db.String(200))  # НОВОЕ: трек-номер для П3
+    p3_track_date = db.Column(db.Date)          # НОВОЕ: дата трека для П3
 
-    # НОВЫЕ ПОЛЯ: ДД-П4
+    # ДД-П4 - ДОБАВЛЯЕМ ТРЕК-НОМЕР И ДАТУ
     p4_in_number = db.Column(db.String(200))
     p4_in_date = db.Column(db.Date)
     p4_out_number = db.Column(db.String(200))
@@ -168,8 +167,10 @@ class Relative(db.Model):
     p4_period_from = db.Column(db.Date)
     p4_period_to = db.Column(db.Date)
     p4_period_indefinite = db.Column(db.Boolean, default=False)
+    p4_track_number = db.Column(db.String(200))  # НОВОЕ: трек-номер для П4
+    p4_track_date = db.Column(db.Date)          # НОВОЕ: дата трека для П4
 
-    # НОВЫЕ ПОЛЯ: К-П5
+    # К-П5 - ДОБАВЛЯЕМ ТРЕК-НОМЕР И ДАТУ
     p5_in_number = db.Column(db.String(200))
     p5_in_date = db.Column(db.Date)
     p5_out_number = db.Column(db.String(200))
@@ -179,21 +180,16 @@ class Relative(db.Model):
     p5_period_from = db.Column(db.Date)
     p5_period_to = db.Column(db.Date)
     p5_period_indefinite = db.Column(db.Boolean, default=False)
+    p5_track_number = db.Column(db.String(200))  # НОВОЕ: трек-номер для П5
+    p5_track_date = db.Column(db.Date)          # НОВОЕ: дата трека для П5
 
-    # НОВЫЕ ПОЛЯ: Трек-номер
-    track_number = db.Column(db.String(200))  # Номер
-    track_date = db.Column(db.Date)           # Дата
-
-    # НОВЫЕ ПОЛЯ: Сканы
-    scan_number = db.Column(db.String(200))   # №
+    # Сканы (остаются без изменений)
+    scan_number = db.Column(db.String(200))   # Номер
     scan_date = db.Column(db.Date)            # Дата
     scan_path = db.Column(db.String(500))     # Путь к файлу скана
 
-    # Связь с основной записью
+    # Связи
     main_person = db.relationship('PersonData', back_populates='relatives_list')
-
-    # ИСПРАВЛЕНО: Убрана связь 'history_entries', оставлена только одна.
-    # Связь с историей изменений. backref='relative_ref' создаст обратную связь в RelativeHistory.
     edit_history = db.relationship('RelativeHistory', backref='relative_ref', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -220,3 +216,77 @@ class RelativeHistory(db.Model):
     def __repr__(self):
         return f'<RelativeHistory {self.relative_id} {self.field_name} {self.edited_at}>'
 
+
+class Award(db.Model):
+    """Модель для наград"""
+    __tablename__ = 'awards'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    person_data_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
+
+    # Основные поля награды
+    name = db.Column(db.String(200))  # Наименование
+    number = db.Column(db.String(100))  # Номер
+    decree_number = db.Column(db.String(100))  # Номер Указа
+    decree_date = db.Column(db.Date)  # Дата Указа
+
+    # Кому передана награда (выбор из списка)
+    transferred_to = db.Column(db.String(200))  # ФИО получателя
+    transfer_date = db.Column(db.Date)  # Дата передачи Н
+
+    # Данные удостоверения
+    certificate_number = db.Column(db.String(100))  # Номер удостоверения
+    certificate_transferred_to = db.Column(db.String(200))  # Кому передано удостоверение
+    certificate_transfer_date = db.Column(db.Date)  # Дата передачи удостоверения
+
+    # Связь с основной записью
+    person = db.relationship('PersonData', backref='awards')
+
+    def __repr__(self):
+        return f'<Award {self.name} {self.number}>'
+
+
+class RuRecord(db.Model):
+    """Модель для записей РУ"""
+    __tablename__ = 'ru_records'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    person_data_id = db.Column(db.Integer, db.ForeignKey('person_data.id'), nullable=False)
+
+    # Поля РУ
+    executor_id = db.Column(db.Integer, db.ForeignKey('relatives.id'), nullable=True)  # Связь с родственником
+    executor_text = db.Column(db.String(200))  # Если выбрано "Другое"
+    amount = db.Column(db.Numeric(10, 2))  # Сумма (2 знака после запятой)
+    document_number = db.Column(db.String(100))  # Номер документа
+    document_date = db.Column(db.Date)  # Дата документа
+
+    # Связи
+    person = db.relationship('PersonData', backref='ru_records')
+    executor_relative = db.relationship('Relative', foreign_keys=[executor_id])
+
+    def __repr__(self):
+        executor = self.executor_relative
+        if executor:
+            return f'<RuRecord {executor.last_name} {executor.first_name} {self.amount}>'
+        return f'<RuRecord {self.id} {self.amount}>'
+
+class AwardHistory(db.Model):
+    """История изменений наград"""
+    __tablename__ = 'award_history'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    award_id = db.Column(db.Integer, db.ForeignKey('awards.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    field_name = db.Column(db.String(100), nullable=False)
+    old_value = db.Column(db.Text)
+    new_value = db.Column(db.Text)
+    edited_at = db.Column(db.DateTime, default=datetime.now)
+
+    user = db.relationship('User', backref='award_edit_actions')
+    award = db.relationship('Award', backref='history_entries')
+
+    def __repr__(self):
+        return f'<AwardHistory {self.award_id} {self.field_name} {self.edited_at}>'

@@ -299,6 +299,14 @@
                                     <label class="form-check-label" for="p1_period_indefinite">Бессрочно</label>
                                 </div>
                             </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_track_number" class="form-label">Трек-номер</label>
+                                <input type="text" class="form-control" id="p1_track_number" name="p1_track_number" value="{{ relative.p1_track_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_track_date" class="form-label">Дата трека</label>
+                                <input type="date" class="form-control" id="p1_track_date" name="p1_track_date" value="{{ relative.p1_track_date.strftime('%Y-%m-%d') if relative.p1_track_date else '' }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -349,6 +357,14 @@
                                     <input type="checkbox" class="form-check-input" id="p2_period_indefinite" name="p2_period_indefinite" value="true" {% if relative.p2_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p2')">
                                     <label class="form-check-label" for="p2_period_indefinite">Бессрочно</label>
                                 </div>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_track_number" class="form-label">Трек-номер</label>
+                                <input type="text" class="form-control" id="p2_track_number" name="p2_track_number" value="{{ relative.p1_track_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_track_date" class="form-label">Дата трека</label>
+                                <input type="date" class="form-control" id="p2_track_date" name="p2_track_date" value="{{ relative.p2_track_date.strftime('%Y-%m-%d') if relative.p2_track_date else '' }}">
                             </div>
                         </div>
                     </div>
@@ -401,6 +417,14 @@
                                     <label class="form-check-label" for="p3_period_indefinite">Бессрочно</label>
                                 </div>
                             </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_track_number" class="form-label">Трек-номер</label>
+                                <input type="text" class="form-control" id="p3_track_number" name="p3_track_number" value="{{ relative.p1_track_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_track_date" class="form-label">Дата трека</label>
+                                <input type="date" class="form-control" id="p3_track_date" name="p3_track_date" value="{{ relative.p3_track_date.strftime('%Y-%m-%d') if relative.p3_track_date else '' }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -451,6 +475,14 @@
                                     <input type="checkbox" class="form-check-input" id="p4_period_indefinite" name="p4_period_indefinite" value="true" {% if relative.p4_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p4')">
                                     <label class="form-check-label" for="p4_period_indefinite">Бессрочно</label>
                                 </div>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_track_number" class="form-label">Трек-номер</label>
+                                <input type="text" class="form-control" id="p1_track_number" name="p1_track_number" value="{{ relative.p1_track_number or '' }}" maxlength="200">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_track_date" class="form-label">Дата трека</label>
+                                <input type="date" class="form-control" id="p4_track_date" name="p4_track_date" value="{{ relative.p4_track_date.strftime('%Y-%m-%d') if relative.p4_track_date else '' }}">
                             </div>
                         </div>
                     </div>
@@ -503,24 +535,13 @@
                                     <label class="form-check-label" for="p5_period_indefinite">Бессрочно</label>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Трек-номер -->
-                <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0">📦 Трек-номер почтового отправления</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="track_number" class="form-label">Номер</label>
-                                <input type="text" class="form-control" id="track_number" name="track_number" value="{{ relative.track_number or '' }}" maxlength="200">
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_track_number" class="form-label">Трек-номер</label>
+                                <input type="text" class="form-control" id="p5_track_number" name="p5_track_number" value="{{ relative.p5_track_number or '' }}" maxlength="200">
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="track_date" class="form-label">Дата</label>
-                                <input type="date" class="form-control" id="track_date" name="track_date" value="{{ relative.track_date.strftime('%Y-%m-%d') if relative.track_date else '' }}">
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_track_date" class="form-label">Дата трека</label>
+                                <input type="date" class="form-control" id="p5_track_date" name="p5_track_date" value="{{ relative.p5_track_date.strftime('%Y-%m-%d') if relative.p5_track_date else '' }}">
                             </div>
                         </div>
                     </div>
@@ -587,6 +608,8 @@ function getFormData() {
         p1_period_from: document.getElementById('p1_period_from')?.value || '',
         p1_period_to: document.getElementById('p1_period_to')?.value || '',
         p1_period_indefinite: document.getElementById('p1_period_indefinite')?.checked || false,
+        p1_track_number: document.getElementById('p1_track_number')?.value || '',
+        p1_track_date: document.getElementById('p1_track_date')?.value || '',
 
         // 755-П2
         p2_in_number: document.getElementById('p2_in_number')?.value || '',
@@ -598,6 +621,8 @@ function getFormData() {
         p2_period_from: document.getElementById('p2_period_from')?.value || '',
         p2_period_to: document.getElementById('p2_period_to')?.value || '',
         p2_period_indefinite: document.getElementById('p2_period_indefinite')?.checked || false,
+        p2_track_number: document.getElementById('p2_track_number')?.value || '',
+        p2_track_date: document.getElementById('p2_track_date')?.value || '',
 
         // 665()-П3
         p3_in_number: document.getElementById('p3_in_number')?.value || '',
@@ -609,6 +634,8 @@ function getFormData() {
         p3_period_from: document.getElementById('p3_period_from')?.value || '',
         p3_period_to: document.getElementById('p3_period_to')?.value || '',
         p3_period_indefinite: document.getElementById('p3_period_indefinite')?.checked || false,
+        p3_track_number: document.getElementById('p3_track_number')?.value || '',
+        p3_track_date: document.getElementById('p3_track_date')?.value || '',
 
         // ДД-П4
         p4_in_number: document.getElementById('p4_in_number')?.value || '',
@@ -620,6 +647,8 @@ function getFormData() {
         p4_period_from: document.getElementById('p4_period_from')?.value || '',
         p4_period_to: document.getElementById('p4_period_to')?.value || '',
         p4_period_indefinite: document.getElementById('p4_period_indefinite')?.checked || false,
+        p4_track_number: document.getElementById('p4_track_number')?.value || '',
+        p4_track_date: document.getElementById('p4_track_date')?.value || '',
 
         // К-П5
         p5_in_number: document.getElementById('p5_in_number')?.value || '',
@@ -631,10 +660,8 @@ function getFormData() {
         p5_period_from: document.getElementById('p5_period_from')?.value || '',
         p5_period_to: document.getElementById('p5_period_to')?.value || '',
         p5_period_indefinite: document.getElementById('p5_period_indefinite')?.checked || false,
-
-        // Трек-номер
-        track_number: document.getElementById('track_number')?.value || '',
-        track_date: document.getElementById('track_date')?.value || '',
+        p5_track_number: document.getElementById('p5_track_number')?.value || '',
+        p5_track_date: document.getElementById('p5_track_date')?.value || '',
 
         // Сканы
         scan_number: document.getElementById('scan_number')?.value || '',

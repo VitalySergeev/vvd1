@@ -78,7 +78,151 @@
         }
     </style>
 
-    {% block extra_head %}{% endblock %}
+    {% block extra_head %}
+        <style>
+            /* Единый стиль для всех фиксированных панелей */
+            .global-fixed-toolbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 9999;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 8px 20px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+                border-radius: 0 0 10px 10px;
+                box-sizing: border-box;
+            }
+
+            .global-toolbar-container {
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                justify-content: flex-start;
+                max-width: 1400px;
+                margin: 0 auto;
+                flex-wrap: wrap;
+            }
+
+            .global-toolbar-btn {
+                padding: 6px 16px;
+                font-size: 14px;
+                font-weight: 500;
+                border: 1px solid transparent;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                text-decoration: none;
+                white-space: nowrap;
+                background: white;
+                color: #333;
+            }
+
+            .global-toolbar-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+
+            /* Цветовые варианты кнопок */
+            .btn-primary-custom {
+                background: #28a745;
+                color: white;
+                border-color: #28a745;
+            }
+            .btn-primary-custom:hover {
+                background: #218838;
+                border-color: #218838;
+            }
+
+            .btn-secondary-custom {
+                background: #6c757d;
+                color: white;
+                border-color: #6c757d;
+            }
+            .btn-secondary-custom:hover {
+                background: #5a6268;
+                border-color: #5a6268;
+            }
+
+            .btn-info-custom {
+                background: #17a2b8;
+                color: white;
+                border-color: #17a2b8;
+            }
+            .btn-info-custom:hover {
+                background: #138496;
+                border-color: #138496;
+            }
+
+            .btn-warning-custom {
+                background: #ffc107;
+                color: #000;
+                border-color: #ffc107;
+            }
+            .btn-warning-custom:hover {
+                background: #e0a800;
+                border-color: #e0a800;
+            }
+
+            .btn-danger-custom {
+                background: #dc3545;
+                color: white;
+                border-color: #dc3545;
+            }
+            .btn-danger-custom:hover {
+                background: #c82333;
+                border-color: #c82333;
+            }
+
+            .btn-orange-custom {
+                background: #fd7e14;
+                color: white;
+                border-color: #fd7e14;
+            }
+            .btn-orange-custom:hover {
+                background: #dc6b0a;
+                border-color: #dc6b0a;
+            }
+
+            .btn-light-custom {
+                background: white;
+                color: #dc3545;
+                border-color: #dc3545;
+            }
+            .btn-light-custom:hover {
+                background: #dc3545;
+                color: white;
+            }
+
+            /* Контейнер для контента */
+            .global-content-wrapper {
+                margin-top: 60px;
+                padding: 20px;
+            }
+
+            /* Адаптивность */
+            @media (max-width: 768px) {
+                .global-toolbar-container {
+                    gap: 10px;
+                    justify-content: center;
+                }
+                .global-toolbar-btn {
+                    padding: 5px 12px;
+                    font-size: 13px;
+                    flex: 1 1 auto;
+                    min-width: 70px;
+                    justify-content: center;
+                }
+                .global-content-wrapper {
+                    margin-top: 100px;
+                }
+            }
+        </style>
+    {% endblock %}
 </head>
 <body>
     <!-- Навигационная панель -->
