@@ -16,7 +16,7 @@
         border-radius: 0 0 10px 10px;
         box-sizing: border-box;
     }
-    
+
     .toolbar-container {
         display: flex;
         gap: 80px;
@@ -26,7 +26,7 @@
         margin: 0 auto;
         flex-wrap: wrap;
     }
-    
+
     .toolbar-btn {
         padding: 12px 30px;
         font-size: 16px;
@@ -41,32 +41,18 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         text-decoration: none;
     }
-    
+
     .toolbar-btn-save {
         background: #28a745;
         color: white;
         border: 2px solid #28a745;
     }
-    
+
     .toolbar-btn-save:hover {
         background: #218838;
         border-color: #218838;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-    }
-    
-    /* НОВОЕ: Стили для кнопки истории */
-    .toolbar-btn-history {
-        background: #ffc107;
-        color: #000;
-        border: 2px solid #ffc107;
-    }
-
-    .toolbar-btn-history:hover {
-        background: #e0a800;
-        border-color: #e0a800;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
     }
 
     .toolbar-btn-delete {
@@ -80,6 +66,19 @@
         border-color: #c82333;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .toolbar-btn-history {
+        background: #ffc107;
+        color: #000;
+        border: 2px solid #ffc107;
+    }
+
+    .toolbar-btn-history:hover {
+        background: #e0a800;
+        border-color: #e0a800;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
     }
 
     .toolbar-btn-close {
@@ -115,7 +114,7 @@
         }
 
         .content-wrapper {
-            margin-top: 240px; /* Увеличил для 4 кнопок */
+            margin-top: 240px;
         }
     }
 
@@ -124,6 +123,23 @@
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Стили для чекбокса "Бессрочно" */
+    .form-check {
+        padding-top: 32px;
+    }
+
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        margin-left: 5px;
+        cursor: pointer;
+        font-weight: normal;
     }
 </style>
 {% endblock %}
@@ -136,7 +152,7 @@
             💾 Сохранить
         </button>
 
-        <!-- НОВОЕ: Кнопка истории только для администратора -->
+        <!-- Кнопка истории для администратора -->
         {% if current_user.is_admin() %}
         <a href="{{ url_for('relative_history', relative_id=relative.id) }}" class="toolbar-btn toolbar-btn-history">
             📜 История
@@ -172,70 +188,72 @@
             <h5 class="mb-0">✏️ Редактирование родственника</h5>
         </div>
         <div class="card-body">
-            <form method="post" id="editRelativeForm">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="last_name" class="form-label">Фамилия</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ relative.last_name or '' }}" required>
+            <form method="post" id="editRelativeForm" enctype="multipart/form-data">
+                <!-- Основные данные -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">👤 Основные данные</h6>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="first_name" class="form-label">Имя</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ relative.first_name or '' }}" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="middle_name" class="form-label">Отчество</label>
-                        <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ relative.middle_name or '' }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="last_name" class="form-label">Фамилия</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ relative.last_name or '' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="first_name" class="form-label">Имя</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ relative.first_name or '' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="middle_name" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ relative.middle_name or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="birth_date" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ relative.birth_date.strftime('%Y-%m-%d') if relative.birth_date else '' }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="phone" class="form-label">Телефон</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ relative.phone or '' }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="relation_degree" class="form-label">Степень родства</label>
+                                <select class="form-select" id="relation_degree" name="relation_degree" onchange="toggleOtherRelation()">
+                                    <option value="">-- Выберите --</option>
+                                    <option value="Супруг(а)" {% if relative.relation_degree == 'Супруг(а)' %}selected{% endif %}>Супруг(а)</option>
+                                    <option value="Сын" {% if relative.relation_degree == 'Сын' %}selected{% endif %}>Сын</option>
+                                    <option value="Дочь" {% if relative.relation_degree == 'Дочь' %}selected{% endif %}>Дочь</option>
+                                    <option value="Отец" {% if relative.relation_degree == 'Отец' %}selected{% endif %}>Отец</option>
+                                    <option value="Мать" {% if relative.relation_degree == 'Мать' %}selected{% endif %}>Мать</option>
+                                    <option value="Брат" {% if relative.relation_degree == 'Брат' %}selected{% endif %}>Брат</option>
+                                    <option value="Сестра" {% if relative.relation_degree == 'Сестра' %}selected{% endif %}>Сестра</option>
+                                    <option value="other" {% if relative.relation_degree and relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра'] %}selected{% endif %}>✏️ Другое (ввести)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3" id="other_relation_container" style="{% if relative.relation_degree and relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра'] %}display: block;{% else %}display: none;{% endif %}">
+                                <label for="other_relation" class="form-label">Укажите степень родства</label>
+                                <input type="text" class="form-control" id="other_relation" name="other_relation" value="{% if relative.relation_degree and relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра'] %}{{ relative.relation_degree }}{% endif %}" placeholder="Введите свой вариант">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="registration_address" class="form-label">Адрес регистрации</label>
+                                <textarea class="form-control" id="registration_address" name="registration_address" rows="2">{{ relative.registration_address or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="actual_address" class="form-label">Адрес фактического проживания</label>
+                                <textarea class="form-control" id="actual_address" name="actual_address" rows="2">{{ relative.actual_address or '' }}</textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="birth_date" class="form-label">Дата рождения</label>
-                        <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ relative.birth_date.strftime('%Y-%m-%d') if relative.birth_date else '' }}">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="phone" class="form-label">Телефон</label>
-                        <input type="text" class="form-control" id="phone" name="phone" value="{{ relative.phone or '' }}">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="relation_degree" class="form-label">Степень родства</label>
-                        <select class="form-select" id="relation_degree" name="relation_degree" onchange="toggleOtherRelation()">
-                            <option value="">-- Выберите --</option>
-                            <option value="Супруг(а)" {% if relative.relation_degree == 'Супруг(а)' %}selected{% endif %}>Супруг(а)</option>
-                            <option value="Сын" {% if relative.relation_degree == 'Сын' %}selected{% endif %}>Сын</option>
-                            <option value="Дочь" {% if relative.relation_degree == 'Дочь' %}selected{% endif %}>Дочь</option>
-                            <option value="Отец" {% if relative.relation_degree == 'Отец' %}selected{% endif %}>Отец</option>
-                            <option value="Мать" {% if relative.relation_degree == 'Мать' %}selected{% endif %}>Мать</option>
-                            <option value="Брат" {% if relative.relation_degree == 'Брат' %}selected{% endif %}>Брат</option>
-                            <option value="Сестра" {% if relative.relation_degree == 'Сестра' %}selected{% endif %}>Сестра</option>
-                            <option value="other" {% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}selected{% endif %}>✏️ Другое (ввести)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3" id="other_relation_container" style="{% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}display: block;{% else %}display: none;{% endif %}">
-                        <label for="other_relation" class="form-label">Укажите степень родства</label>
-                        <input type="text" class="form-control" id="other_relation" name="other_relation" value="{% if relative.relation_degree not in ['Супруг(а)', 'Сын', 'Дочь', 'Отец', 'Мать', 'Брат', 'Сестра', ''] %}{{ relative.relation_degree }}{% endif %}" placeholder="Введите свой вариант">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="registration_address" class="form-label">Адрес регистрации</label>
-                        <textarea class="form-control" id="registration_address" name="registration_address" rows="2">{{ relative.registration_address or '' }}</textarea>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="actual_address" class="form-label">Адрес фактического проживания</label>
-                        <textarea class="form-control" id="actual_address" name="actual_address" rows="2">{{ relative.actual_address or '' }}</textarea>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="period_assignment" class="form-label">Период назначения</label>
-                        <input type="text" class="form-control" id="period_assignment" name="period_assignment" value="{{ relative.period_assignment or '' }}" placeholder="Например: 2024-2025, ежемесячно">
-                    </div>
-                </div>
                 <!-- 98 У (П1) -->
-                <div class="card mb-3 mt-4">
+                <div class="card mb-3">
                     <div class="card-header bg-info text-white">
                         <h6 class="mb-0">📄 98 У (П1)</h6>
                     </div>
@@ -246,7 +264,7 @@
                                 <input type="text" class="form-control" id="p1_in_number" name="p1_in_number" value="{{ relative.p1_in_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p1_in_date" class="form-label">Дата</label>
+                                <label for="p1_in_date" class="form-label">Дата вх.</label>
                                 <input type="date" class="form-control" id="p1_in_date" name="p1_in_date" value="{{ relative.p1_in_date.strftime('%Y-%m-%d') if relative.p1_in_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -254,7 +272,7 @@
                                 <input type="text" class="form-control" id="p1_out_number" name="p1_out_number" value="{{ relative.p1_out_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p1_out_date" class="form-label">Дата</label>
+                                <label for="p1_out_date" class="form-label">Дата исх.</label>
                                 <input type="date" class="form-control" id="p1_out_date" name="p1_out_date" value="{{ relative.p1_out_date.strftime('%Y-%m-%d') if relative.p1_out_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -262,8 +280,29 @@
                                 <input type="date" class="form-control" id="p1_pay_date" name="p1_pay_date" value="{{ relative.p1_pay_date.strftime('%Y-%m-%d') if relative.p1_pay_date else '' }}">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_size" class="form-label">Размер П</label>
+                                <input type="text" class="form-control" id="p1_size" name="p1_size" value="{{ relative.p1_size or '' }}" placeholder="Сумма/размер">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_period_from" class="form-label">Период с</label>
+                                <input type="date" class="form-control" id="p1_period_from" name="p1_period_from" value="{{ relative.p1_period_from.strftime('%Y-%m-%d') if relative.p1_period_from else '' }}" {% if relative.p1_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p1_period_to" class="form-label">Период по</label>
+                                <input type="date" class="form-control" id="p1_period_to" name="p1_period_to" value="{{ relative.p1_period_to.strftime('%Y-%m-%d') if relative.p1_period_to else '' }}" {% if relative.p1_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="p1_period_indefinite" name="p1_period_indefinite" value="true" {% if relative.p1_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p1')">
+                                    <label class="form-check-label" for="p1_period_indefinite">Бессрочно</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <!-- 755-П2 -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
@@ -276,7 +315,7 @@
                                 <input type="text" class="form-control" id="p2_in_number" name="p2_in_number" value="{{ relative.p2_in_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p2_in_date" class="form-label">Дата</label>
+                                <label for="p2_in_date" class="form-label">Дата вх.</label>
                                 <input type="date" class="form-control" id="p2_in_date" name="p2_in_date" value="{{ relative.p2_in_date.strftime('%Y-%m-%d') if relative.p2_in_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -284,7 +323,7 @@
                                 <input type="text" class="form-control" id="p2_out_number" name="p2_out_number" value="{{ relative.p2_out_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p2_out_date" class="form-label">Дата</label>
+                                <label for="p2_out_date" class="form-label">Дата исх.</label>
                                 <input type="date" class="form-control" id="p2_out_date" name="p2_out_date" value="{{ relative.p2_out_date.strftime('%Y-%m-%d') if relative.p2_out_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -292,8 +331,29 @@
                                 <input type="date" class="form-control" id="p2_pay_date" name="p2_pay_date" value="{{ relative.p2_pay_date.strftime('%Y-%m-%d') if relative.p2_pay_date else '' }}">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_size" class="form-label">Размер П</label>
+                                <input type="text" class="form-control" id="p2_size" name="p2_size" value="{{ relative.p2_size or '' }}" placeholder="Сумма/размер">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_period_from" class="form-label">Период с</label>
+                                <input type="date" class="form-control" id="p2_period_from" name="p2_period_from" value="{{ relative.p2_period_from.strftime('%Y-%m-%d') if relative.p2_period_from else '' }}" {% if relative.p2_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2_period_to" class="form-label">Период по</label>
+                                <input type="date" class="form-control" id="p2_period_to" name="p2_period_to" value="{{ relative.p2_period_to.strftime('%Y-%m-%d') if relative.p2_period_to else '' }}" {% if relative.p2_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="p2_period_indefinite" name="p2_period_indefinite" value="true" {% if relative.p2_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p2')">
+                                    <label class="form-check-label" for="p2_period_indefinite">Бессрочно</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <!-- 665()-П3 -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
@@ -306,7 +366,7 @@
                                 <input type="text" class="form-control" id="p3_in_number" name="p3_in_number" value="{{ relative.p3_in_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p3_in_date" class="form-label">Дата</label>
+                                <label for="p3_in_date" class="form-label">Дата вх.</label>
                                 <input type="date" class="form-control" id="p3_in_date" name="p3_in_date" value="{{ relative.p3_in_date.strftime('%Y-%m-%d') if relative.p3_in_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -314,7 +374,7 @@
                                 <input type="text" class="form-control" id="p3_out_number" name="p3_out_number" value="{{ relative.p3_out_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p3_out_date" class="form-label">Дата</label>
+                                <label for="p3_out_date" class="form-label">Дата исх.</label>
                                 <input type="date" class="form-control" id="p3_out_date" name="p3_out_date" value="{{ relative.p3_out_date.strftime('%Y-%m-%d') if relative.p3_out_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -322,8 +382,29 @@
                                 <input type="date" class="form-control" id="p3_pay_date" name="p3_pay_date" value="{{ relative.p3_pay_date.strftime('%Y-%m-%d') if relative.p3_pay_date else '' }}">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_size" class="form-label">Размер П</label>
+                                <input type="text" class="form-control" id="p3_size" name="p3_size" value="{{ relative.p3_size or '' }}" placeholder="Сумма/размер">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_period_from" class="form-label">Период с</label>
+                                <input type="date" class="form-control" id="p3_period_from" name="p3_period_from" value="{{ relative.p3_period_from.strftime('%Y-%m-%d') if relative.p3_period_from else '' }}" {% if relative.p3_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3_period_to" class="form-label">Период по</label>
+                                <input type="date" class="form-control" id="p3_period_to" name="p3_period_to" value="{{ relative.p3_period_to.strftime('%Y-%m-%d') if relative.p3_period_to else '' }}" {% if relative.p3_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="p3_period_indefinite" name="p3_period_indefinite" value="true" {% if relative.p3_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p3')">
+                                    <label class="form-check-label" for="p3_period_indefinite">Бессрочно</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <!-- ДД-П4 -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
@@ -336,7 +417,7 @@
                                 <input type="text" class="form-control" id="p4_in_number" name="p4_in_number" value="{{ relative.p4_in_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p4_in_date" class="form-label">Дата</label>
+                                <label for="p4_in_date" class="form-label">Дата вх.</label>
                                 <input type="date" class="form-control" id="p4_in_date" name="p4_in_date" value="{{ relative.p4_in_date.strftime('%Y-%m-%d') if relative.p4_in_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -344,7 +425,7 @@
                                 <input type="text" class="form-control" id="p4_out_number" name="p4_out_number" value="{{ relative.p4_out_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p4_out_date" class="form-label">Дата</label>
+                                <label for="p4_out_date" class="form-label">Дата исх.</label>
                                 <input type="date" class="form-control" id="p4_out_date" name="p4_out_date" value="{{ relative.p4_out_date.strftime('%Y-%m-%d') if relative.p4_out_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -352,8 +433,29 @@
                                 <input type="date" class="form-control" id="p4_pay_date" name="p4_pay_date" value="{{ relative.p4_pay_date.strftime('%Y-%m-%d') if relative.p4_pay_date else '' }}">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_size" class="form-label">Размер П</label>
+                                <input type="text" class="form-control" id="p4_size" name="p4_size" value="{{ relative.p4_size or '' }}" placeholder="Сумма/размер">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_period_from" class="form-label">Период с</label>
+                                <input type="date" class="form-control" id="p4_period_from" name="p4_period_from" value="{{ relative.p4_period_from.strftime('%Y-%m-%d') if relative.p4_period_from else '' }}" {% if relative.p4_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4_period_to" class="form-label">Период по</label>
+                                <input type="date" class="form-control" id="p4_period_to" name="p4_period_to" value="{{ relative.p4_period_to.strftime('%Y-%m-%d') if relative.p4_period_to else '' }}" {% if relative.p4_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="p4_period_indefinite" name="p4_period_indefinite" value="true" {% if relative.p4_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p4')">
+                                    <label class="form-check-label" for="p4_period_indefinite">Бессрочно</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <!-- К-П5 -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
@@ -366,7 +468,7 @@
                                 <input type="text" class="form-control" id="p5_in_number" name="p5_in_number" value="{{ relative.p5_in_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p5_in_date" class="form-label">Дата</label>
+                                <label for="p5_in_date" class="form-label">Дата вх.</label>
                                 <input type="date" class="form-control" id="p5_in_date" name="p5_in_date" value="{{ relative.p5_in_date.strftime('%Y-%m-%d') if relative.p5_in_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -374,7 +476,7 @@
                                 <input type="text" class="form-control" id="p5_out_number" name="p5_out_number" value="{{ relative.p5_out_number or '' }}" maxlength="200">
                             </div>
                             <div class="col-md-2 mb-3">
-                                <label for="p5_out_date" class="form-label">Дата</label>
+                                <label for="p5_out_date" class="form-label">Дата исх.</label>
                                 <input type="date" class="form-control" id="p5_out_date" name="p5_out_date" value="{{ relative.p5_out_date.strftime('%Y-%m-%d') if relative.p5_out_date else '' }}">
                             </div>
                             <div class="col-md-2 mb-3">
@@ -382,9 +484,30 @@
                                 <input type="date" class="form-control" id="p5_pay_date" name="p5_pay_date" value="{{ relative.p5_pay_date.strftime('%Y-%m-%d') if relative.p5_pay_date else '' }}">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_size" class="form-label">Размер П</label>
+                                <input type="text" class="form-control" id="p5_size" name="p5_size" value="{{ relative.p5_size or '' }}" placeholder="Сумма/размер">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_period_from" class="form-label">Период с</label>
+                                <input type="date" class="form-control" id="p5_period_from" name="p5_period_from" value="{{ relative.p5_period_from.strftime('%Y-%m-%d') if relative.p5_period_from else '' }}" {% if relative.p5_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p5_period_to" class="form-label">Период по</label>
+                                <input type="date" class="form-control" id="p5_period_to" name="p5_period_to" value="{{ relative.p5_period_to.strftime('%Y-%m-%d') if relative.p5_period_to else '' }}" {% if relative.p5_period_indefinite %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="p5_period_indefinite" name="p5_period_indefinite" value="true" {% if relative.p5_period_indefinite %}checked{% endif %} onchange="togglePeriodFields('p5')">
+                                    <label class="form-check-label" for="p5_period_indefinite">Бессрочно</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <!-- Трек-номер почтового отправления -->
+
+                <!-- Трек-номер -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
                         <h6 class="mb-0">📦 Трек-номер почтового отправления</h6>
@@ -402,6 +525,7 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Сканы -->
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
@@ -439,18 +563,10 @@
 </div>
 
 <script>
-// Сохраняем оригинальные данные при загрузке страницы
-console.log('=== ИНИЦИАЛИЗАЦИЯ edit_relative.html ===');
-console.log('relative_id:', {{ relative.id }});
-console.log('person_id:', {{ person.id }});
-console.log('URL для закрытия:', "{{ url_for('manage_relatives', person_id=person.id) }}");
-
-var originalFormData = getFormData();
-console.log('Оригинальные данные:', originalFormData);
-
 // Функция для сбора текущих данных формы
 function getFormData() {
     return {
+        // Основные данные
         last_name: document.getElementById('last_name')?.value || '',
         first_name: document.getElementById('first_name')?.value || '',
         middle_name: document.getElementById('middle_name')?.value || '',
@@ -460,20 +576,83 @@ function getFormData() {
         size: document.getElementById('size')?.value || '',
         registration_address: document.getElementById('registration_address')?.value || '',
         actual_address: document.getElementById('actual_address')?.value || '',
-        period_assignment: document.getElementById('period_assignment')?.value || ''
+
+        // 98 У (П1)
+        p1_in_number: document.getElementById('p1_in_number')?.value || '',
+        p1_in_date: document.getElementById('p1_in_date')?.value || '',
+        p1_out_number: document.getElementById('p1_out_number')?.value || '',
+        p1_out_date: document.getElementById('p1_out_date')?.value || '',
+        p1_pay_date: document.getElementById('p1_pay_date')?.value || '',
+        p1_size: document.getElementById('p1_size')?.value || '',
+        p1_period_from: document.getElementById('p1_period_from')?.value || '',
+        p1_period_to: document.getElementById('p1_period_to')?.value || '',
+        p1_period_indefinite: document.getElementById('p1_period_indefinite')?.checked || false,
+
+        // 755-П2
+        p2_in_number: document.getElementById('p2_in_number')?.value || '',
+        p2_in_date: document.getElementById('p2_in_date')?.value || '',
+        p2_out_number: document.getElementById('p2_out_number')?.value || '',
+        p2_out_date: document.getElementById('p2_out_date')?.value || '',
+        p2_pay_date: document.getElementById('p2_pay_date')?.value || '',
+        p2_size: document.getElementById('p2_size')?.value || '',
+        p2_period_from: document.getElementById('p2_period_from')?.value || '',
+        p2_period_to: document.getElementById('p2_period_to')?.value || '',
+        p2_period_indefinite: document.getElementById('p2_period_indefinite')?.checked || false,
+
+        // 665()-П3
+        p3_in_number: document.getElementById('p3_in_number')?.value || '',
+        p3_in_date: document.getElementById('p3_in_date')?.value || '',
+        p3_out_number: document.getElementById('p3_out_number')?.value || '',
+        p3_out_date: document.getElementById('p3_out_date')?.value || '',
+        p3_pay_date: document.getElementById('p3_pay_date')?.value || '',
+        p3_size: document.getElementById('p3_size')?.value || '',
+        p3_period_from: document.getElementById('p3_period_from')?.value || '',
+        p3_period_to: document.getElementById('p3_period_to')?.value || '',
+        p3_period_indefinite: document.getElementById('p3_period_indefinite')?.checked || false,
+
+        // ДД-П4
+        p4_in_number: document.getElementById('p4_in_number')?.value || '',
+        p4_in_date: document.getElementById('p4_in_date')?.value || '',
+        p4_out_number: document.getElementById('p4_out_number')?.value || '',
+        p4_out_date: document.getElementById('p4_out_date')?.value || '',
+        p4_pay_date: document.getElementById('p4_pay_date')?.value || '',
+        p4_size: document.getElementById('p4_size')?.value || '',
+        p4_period_from: document.getElementById('p4_period_from')?.value || '',
+        p4_period_to: document.getElementById('p4_period_to')?.value || '',
+        p4_period_indefinite: document.getElementById('p4_period_indefinite')?.checked || false,
+
+        // К-П5
+        p5_in_number: document.getElementById('p5_in_number')?.value || '',
+        p5_in_date: document.getElementById('p5_in_date')?.value || '',
+        p5_out_number: document.getElementById('p5_out_number')?.value || '',
+        p5_out_date: document.getElementById('p5_out_date')?.value || '',
+        p5_pay_date: document.getElementById('p5_pay_date')?.value || '',
+        p5_size: document.getElementById('p5_size')?.value || '',
+        p5_period_from: document.getElementById('p5_period_from')?.value || '',
+        p5_period_to: document.getElementById('p5_period_to')?.value || '',
+        p5_period_indefinite: document.getElementById('p5_period_indefinite')?.checked || false,
+
+        // Трек-номер
+        track_number: document.getElementById('track_number')?.value || '',
+        track_date: document.getElementById('track_date')?.value || '',
+
+        // Сканы
+        scan_number: document.getElementById('scan_number')?.value || '',
+        scan_date: document.getElementById('scan_date')?.value || ''
     };
 }
+
+// Сохраняем оригинальные данные при загрузке страницы
+var originalFormData = getFormData();
+console.log('Оригинальные данные родственника:', originalFormData);
 
 // Функция для проверки изменений
 function hasChanges() {
     var currentData = getFormData();
-    console.log('Текущие данные:', currentData);
 
     for (var key in originalFormData) {
         if (currentData[key] !== originalFormData[key]) {
-            console.log('ИЗМЕНЕНИЕ найдено в поле:', key,
-                        'было:', originalFormData[key],
-                        'стало:', currentData[key]);
+            console.log('Найдено изменение в поле:', key, 'было:', originalFormData[key], 'стало:', currentData[key]);
             return true;
         }
     }
@@ -483,74 +662,51 @@ function hasChanges() {
 
 // Обработчик для кнопки "Закрыть"
 function handleClose() {
-    console.log('=== handleClose ВЫЗВАНА ===');
-    console.log('Проверка наличия изменений...');
+    console.log('Проверка перед закрытием...');
 
-    try {
-        var changes = hasChanges();
-        console.log('Результат hasChanges:', changes);
+    if (hasChanges()) {
+        console.log('Есть изменения, показываем диалог');
+        var result = confirm('Сохранить измененные данные?');
+        if (result) {
+            console.log('Пользователь выбрал Да - сохраняем и закрываем');
 
-        if (changes) {
-            console.log('Есть изменения, показываем диалог');
-            var result = confirm('Сохранить измененные данные?');
-            console.log('Результат confirm:', result);
+            var form = document.getElementById('editRelativeForm');
+            var silentInput = document.createElement('input');
+            silentInput.type = 'hidden';
+            silentInput.name = 'silent_save';
+            silentInput.value = 'true';
+            form.appendChild(silentInput);
 
-            if (result) {
-                console.log('Пользователь выбрал ДА - сохраняем');
-
-                // Добавляем скрытое поле для тихого сохранения
-                var form = document.getElementById('editRelativeForm');
-                var silentInput = document.createElement('input');
-                silentInput.type = 'hidden';
-                silentInput.name = 'silent_save';
-                silentInput.value = 'true';
-                form.appendChild(silentInput);
-
-                console.log('Отправляем форму...');
-                form.submit();
-            } else {
-                console.log('Пользователь выбрал НЕТ - закрываем без сохранения');
-                var url = "{{ url_for('manage_relatives', person_id=person.id) }}";
-                console.log('Переход по URL:', url);
-                window.location.href = url;
-            }
+            form.submit();
         } else {
-            console.log('Изменений нет - сразу закрываем');
-            var url = "{{ url_for('manage_relatives', person_id=person.id) }}";
-            console.log('Переход по URL:', url);
-            window.location.href = url;
+            console.log('Пользователь выбрал Нет - закрываем без сохранения');
+            window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
         }
-    } catch (error) {
-        console.error('ОШИБКА в handleClose:', error);
-        alert('Произошла ошибка: ' + error.message);
+    } else {
+        console.log('Изменений нет - сразу закрываем');
+        window.location.href = "{{ url_for('manage_relatives', person_id=person.id) }}";
     }
 }
 
 // Функция для подтверждения удаления
 function confirmDelete() {
-    console.log('confirmDelete вызвана');
     if (confirm('Вы уверены, что хотите удалить этого родственника?')) {
-        console.log('Удаление подтверждено');
         document.getElementById('deleteForm').submit();
-    } else {
-        console.log('Удаление отменено');
     }
 }
 
 // Функция для поля "Другое"
 function toggleOtherRelation() {
-    console.log('toggleOtherRelation вызвана');
     var select = document.getElementById('relation_degree');
     var otherContainer = document.getElementById('other_relation_container');
     var otherInput = document.getElementById('other_relation');
 
     if (select && otherContainer && otherInput) {
         if (select.value === 'other') {
-            console.log('Показываем поле для другого варианта');
             otherContainer.style.display = 'block';
             otherInput.required = true;
+            otherInput.focus();
         } else {
-            console.log('Скрываем поле для другого варианта');
             otherContainer.style.display = 'none';
             otherInput.required = false;
             otherInput.value = '';
@@ -558,44 +714,61 @@ function toggleOtherRelation() {
     }
 }
 
+// Функция для управления полями периода
+function togglePeriodFields(blockPrefix) {
+    var indefiniteCheck = document.getElementById(blockPrefix + '_period_indefinite');
+    var periodFrom = document.getElementById(blockPrefix + '_period_from');
+    var periodTo = document.getElementById(blockPrefix + '_period_to');
+
+    if (indefiniteCheck && periodFrom && periodTo) {
+        if (indefiniteCheck.checked) {
+            periodFrom.disabled = true;
+            periodTo.disabled = true;
+            periodFrom.value = '';
+            periodTo.value = '';
+        } else {
+            periodFrom.disabled = false;
+            periodTo.disabled = false;
+        }
+    }
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DOM ПОЛНОСТЬЮ ЗАГРУЖЕН ===');
-
-    // Проверяем наличие всех необходимых элементов
-    var form = document.getElementById('editRelativeForm');
-    console.log('Форма найдена:', form ? 'да' : 'нет');
-
-    var closeBtn = document.querySelector('.toolbar-btn-close');
-    console.log('Кнопка закрытия найдена:', closeBtn ? 'да' : 'нет');
-    if (closeBtn) {
-        console.log('Текст кнопки:', closeBtn.textContent);
-        console.log('Атрибут onclick:', closeBtn.getAttribute('onclick'));
-    }
-
     // Инициализация поля "Другое"
     var select = document.getElementById('relation_degree');
     var otherContainer = document.getElementById('other_relation_container');
     var otherInput = document.getElementById('other_relation');
 
     if (select && otherContainer && otherInput) {
-        console.log('Поле степени родства найдено, текущее значение:', select.value);
-
         if (select.value === 'other') {
-            console.log('Активируем поле для другого варианта');
             otherContainer.style.display = 'block';
             otherInput.required = true;
         }
-
         select.addEventListener('change', toggleOtherRelation);
-        console.log('Обработчик change добавлен');
     }
 
-    // Добавляем обработчик для Enter в полях
-    var inputs = document.querySelectorAll('#editRelativeForm input, #editRelativeForm select, #editRelativeForm textarea');
-    console.log('Найдено полей ввода:', inputs.length);
+    // Инициализация для всех блоков периода
+    var blocks = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    blocks.forEach(function(block) {
+        var indefiniteCheck = document.getElementById(block + '_period_indefinite');
+        var periodFrom = document.getElementById(block + '_period_from');
+        var periodTo = document.getElementById(block + '_period_to');
 
-    inputs.forEach(function(input, index) {
+        if (indefiniteCheck && periodFrom && periodTo) {
+            if (indefiniteCheck.checked) {
+                periodFrom.disabled = true;
+                periodTo.disabled = true;
+            }
+            indefiniteCheck.addEventListener('change', function() {
+                togglePeriodFields(block);
+            });
+        }
+    });
+
+    // Добавляем поддержку клавиатуры для Enter
+    var inputs = document.querySelectorAll('#editRelativeForm input, #editRelativeForm select, #editRelativeForm textarea');
+    inputs.forEach(function(input) {
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -606,44 +779,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Очистка данных при закрытии страницы
 window.addEventListener('beforeunload', function() {
-    console.log('beforeunload: очистка данных');
     originalFormData = null;
+    console.log('Данные очищены при закрытии страницы');
 });
 
 window.addEventListener('pagehide', function() {
-    console.log('pagehide: очистка данных');
     originalFormData = null;
-});
-</script>
-
-<script>
-function toggleOtherRelation() {
-    var select = document.getElementById('relation_degree');
-    var otherContainer = document.getElementById('other_relation_container');
-    var otherInput = document.getElementById('other_relation');
-
-    if (select.value === 'other') {
-        otherContainer.style.display = 'block';
-        otherInput.required = true;
-        otherInput.focus();
-    } else {
-        otherContainer.style.display = 'none';
-        otherInput.required = false;
-        otherInput.value = '';
-    }
-}
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    var select = document.getElementById('relation_degree');
-    var otherContainer = document.getElementById('other_relation_container');
-    var otherInput = document.getElementById('other_relation');
-
-    // Проверяем, не было ли уже выбрано "Другое"
-    if (select.value === 'other') {
-        otherContainer.style.display = 'block';
-        otherInput.required = true;
-    }
+    console.log('Данные очищены при навигации');
 });
 </script>
 {% endblock %}
